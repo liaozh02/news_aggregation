@@ -8,14 +8,17 @@ const routes: Routes = [
     redirectTo: "problems",
     pathMatch: "full"
   },
+
   {
     path: "problems",
     component: ProblemListComponent
   },
+
   {
     path: "problems/:id",
     component: ProblemDetailComponent
   },
+
   {
     path: "**",
     redirectTo: "problems",
