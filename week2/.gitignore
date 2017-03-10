@@ -1,9 +1,10 @@
 # See http://help.github.com/ignore-files/ for more about ignoring files.
 
 # compiled output
-/public
+public/
 /tmp
 
+oj-client/dist
 # dependencies
 node_modules/
 
