@@ -2,7 +2,7 @@
 
 # compiled output
 public/
-oj-client/dist
+dist/
 /tmp
 
 # dependencies

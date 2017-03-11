@@ -22,7 +22,7 @@
         <ul class="nav navbar-nav navbar-right">
           <li>
             <form class="navbar-form">
-              <button type="button" class="btn btn-primary">Sign in</button>
+              <button type="button" class="btn btn-primary" (click)="login()">Sign in</button>
             </form>
           </li>
           <li class="dropdown">
@@ -32,7 +32,7 @@
               <li><a href="#">My Favorites</a></li>
               <li><a href="#">My Submissions</a></li>
               <li role="separator" class="divider"></li>
-              <li><a href="#">Log Out</a></li>
+              <li><a href="#" (click)=logout() >Log Out</a></li>
             </ul>
           </li>
         </ul>
