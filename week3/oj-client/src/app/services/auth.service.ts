@@ -2,7 +2,8 @@ import { Injectable }      from '@angular/core';
 import { tokenNotExpired } from 'angular2-jwt';
 import { BehaviorSubject} from 'rxjs/BehaviorSubject';
 import { Observable } from 'rxjs/Rx';
-
+import { Http, Response, Headers} from '@angular/http'
+import 'rxjs/add/operator/toPromise';
 // Avoid name not found warnings
 //declare var Auth0Lock: any;
 let Auth0Lock: any = require('auth0-lock').default;
@@ -15,10 +16,10 @@ export class Auth {
 
   lock = new Auth0Lock(this.clientId, this.domain, {});
   //Store profile object in auth class
-  userProfile: Object;
+  userProfile: any;
 
   private profileSource = new BehaviorSubject<Object>([]);
-  constructor() {
+  constructor(private http: Http) {
     // Set userProfile attribute of already saved profile
     this.userProfile = JSON.parse(localStorage.getItem('profile'));
     this.profileSource.next(this.userProfile);
@@ -62,5 +63,27 @@ export class Auth {
 
   public getProfile(): Observable<Object> {
     return this.profileSource.asObservable();
+  }
+
+  public resetPassword(): void {
+    let profile = this.userProfile;
+    let url: string = `https://${this.domain}/dbconnections/change_password`;
+    let headers = new Headers({ 'content-type': 'application/json' });
+    let body = {
+                client_id: this.clientId,
+                email: profile.email,
+                connection: 'Username-Password-Authentication' }
+//    console.log(body);
+    this.http.post(url, body, headers)
+      .toPromise()
+      .then((res: Response) => {
+        console.log(res.json());
+      })
+      .catch(this.handleError);
+  }
+
+  private handleError(error: any): Promise<any> {
+    console.error("Error happened!", error);
+    return Promise.reject(error.message || error);
   }
 }
