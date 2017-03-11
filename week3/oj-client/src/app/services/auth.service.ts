@@ -22,6 +22,7 @@ export class Auth {
     // Set userProfile attribute of already saved profile
     this.userProfile = JSON.parse(localStorage.getItem('profile'));
     this.profileSource.next(this.userProfile);
+//      console.log("Begin" + this.userProfile);
     this.lock.on("authenticated", (authResult) => {
     // Fetch profile information
       this.lock.getProfile(authResult.idToken, (error, profile) => {
@@ -34,6 +35,8 @@ export class Auth {
         localStorage.setItem("profile", JSON.stringify(profile));
         this.userProfile = profile;
         this.profileSource.next(this.userProfile);
+//        debugger;
+//        console.log("After" + JSON.stringify(this.userProfile));
       });
     });
   }
@@ -51,10 +54,10 @@ export class Auth {
 
   public logout() {
     // Remove token from localStorage
-    console.log("log out");
     localStorage.removeItem('idToken');
     localStorage.removeItem('profile');
-    this.userProfile = undefined;
+  //  this.userProfile = undefined;
+  this.userProfile = null;
   }
 
   public getProfile(): Observable<Object> {

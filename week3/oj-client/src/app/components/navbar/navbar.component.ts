@@ -1,4 +1,5 @@
 import { Component, OnInit, Inject } from '@angular/core';
+import { Subscription } from 'rxjs/Subscription';
 
 @Component({
   selector: 'app-navbar',
@@ -9,19 +10,23 @@ export class NavbarComponent implements OnInit {
 
   title = "AliceOJ";
   username = "";
+  subscriptionProblems: Subscription;
 
   constructor(@Inject('auth0') private auth) { }
 
   ngOnInit() {
-//    if (this.auth.authenticated()) {
-//      this.username = this.auth.getProfile().nickname;
-//    }
-      this.auth.getProfile().subscribe(profile => { this.username = profile.nickname});
+      this.getProfile();
   }
 
+  getProfile(): void {
+    this.subscriptionProblems = this.auth.getProfile().subscribe(profile => {
+      if (profile)
+        this.username = profile.nickname;
+      else this.username = "";
+    });
+  }
   login(): void {
     this.auth.login();
-
   }
 
   logout(): void{
