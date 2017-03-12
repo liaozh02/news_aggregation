@@ -23,7 +23,6 @@ export class Auth {
     // Set userProfile attribute of already saved profile
     this.userProfile = JSON.parse(localStorage.getItem('profile'));
     this.profileSource.next(this.userProfile);
-//      console.log("Begin" + this.userProfile);
     this.lock.on("authenticated", (authResult) => {
     // Fetch profile information
       this.lock.getProfile(authResult.idToken, (error, profile) => {
@@ -32,12 +31,11 @@ export class Auth {
           alert(error);
         }
         // Save token and profile locally
-        localStorage.setItem("idToken", authResult.idToken);
+        localStorage.setItem("id_Token", authResult.idToken);
         localStorage.setItem("profile", JSON.stringify(profile));
         this.userProfile = profile;
         this.profileSource.next(this.userProfile);
-//        debugger;
-//        console.log("After" + JSON.stringify(this.userProfile));
+    //    console.log(profile);
       });
     });
   }
@@ -50,12 +48,15 @@ export class Auth {
   public authenticated() {
     // Check if there's an unexpired JWT
     // This searches for an item in localStorage with key == 'id_token'
-    return tokenNotExpired();
+    //return tokenNotExpired();
+    if(localStorage.getItem('id_Token') == null)
+      return false;
+    else return true;
   }
 
   public logout() {
     // Remove token from localStorage
-    localStorage.removeItem('idToken');
+    localStorage.removeItem('id_Token');
     localStorage.removeItem('profile');
   //  this.userProfile = undefined;
   this.userProfile = null;
