@@ -42,8 +42,8 @@ import { ProfileComponent } from './components/profile/profile.component';
  {
     provide: "authGuard",
     useClass: AuthGuardService
-  }
-  //AuthGuardService
+  },
+  AuthGuardService
   ],
   bootstrap: [AppComponent]
 })

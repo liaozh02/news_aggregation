@@ -1,6 +1,5 @@
 import { Injectable } from '@angular/core';
 import { Problem } from "../models/problem.model";
-import { PROBLEMS } from "../mock-problems";
 import { Http, Response, Headers } from '@angular/http';
 import { BehaviorSubject} from 'rxjs/BehaviorSubject';
 import { Observable } from 'rxjs/Rx';
@@ -48,5 +47,5 @@ export class DataService {
     console.error('An error occurred', error); // for demo purposes only
     return Promise.reject(error.body || error);
   }
-  
+
 }

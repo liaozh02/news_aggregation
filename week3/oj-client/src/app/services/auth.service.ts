@@ -5,7 +5,7 @@ import { Observable } from 'rxjs/Rx';
 import { Http, Response, Headers} from '@angular/http'
 import 'rxjs/add/operator/toPromise';
 // Avoid name not found warnings
-//declare var Auth0Lock: any;
+//declare let Auth0Lock: any;
 let Auth0Lock: any = require('auth0-lock').default;
 
 @Injectable()
@@ -14,56 +14,63 @@ export class Auth {
   clientId = 'g6ysFTRK5Cpe45KHrsO0Wq3AodGHE4cV';
   domain = 'aliceliao.auth0.com';
 
-  lock = new Auth0Lock(this.clientId, this.domain, {});
+  lock = new Auth0Lock(this.clientId, this.domain, {
+  /*  auth:{ redirectUrl: 'http://localhost:3000',
+           redirect: true,
+           responseType: 'token'}*/
+      auth:{redirect: false, responseType: 'token'}
+  });
   //Store profile object in auth class
   userProfile: any;
 
   private profileSource = new BehaviorSubject<Object>([]);
   constructor(private http: Http) {
     // Set userProfile attribute of already saved profile
-    this.userProfile = JSON.parse(localStorage.getItem('profile'));
-    this.profileSource.next(this.userProfile);
+//    this.userProfile = JSON.parse(localStorage.getItem('profile'));
+//    this.profileSource.next(this.userProfile);
+    this.profileSource.next(JSON.parse(localStorage.getItem('profile')));
     this.lock.on("authenticated", (authResult) => {
     // Fetch profile information
-      this.lock.getProfile(authResult.idToken, (error, profile) => {
+      this.lock.getUserInfo(authResult.accessToken, (error, profile) => {
+        console.log(authResult);
         if (error) {
         // Handle error
           alert(error);
         }
         // Save token and profile locally
-        localStorage.setItem("id_Token", authResult.idToken);
+        localStorage.setItem("id_token", authResult.idToken);
         localStorage.setItem("profile", JSON.stringify(profile));
-        this.userProfile = profile;
-        this.profileSource.next(this.userProfile);
-    //    console.log(profile);
+        this.profileSource.next(JSON.parse(localStorage.getItem('profile')));
       });
     });
   }
 
   public login() {
     // Call the show method to display the widget.
+
     this.lock.show();
   }
 
   public authenticated() {
     // Check if there's an unexpired JWT
     // This searches for an item in localStorage with key == 'id_token'
-    //return tokenNotExpired();
-    if(localStorage.getItem('id_Token') == null)
-      return false;
-    else return true;
+    return tokenNotExpired();
   }
 
   public logout() {
     // Remove token from localStorage
-    localStorage.removeItem('id_Token');
+    localStorage.removeItem('id_token');
     localStorage.removeItem('profile');
-  //  this.userProfile = undefined;
-  this.userProfile = null;
+    this.profileSource.next(null);
+//    this.userProfile = null;
   }
 
   public getProfile(): Observable<Object> {
     return this.profileSource.asObservable();
+  }
+
+  public getCurrentProfile(): Object {
+    return JSON.parse(localStorage.getItem('profile'));
   }
 
   public resetPassword(): void {

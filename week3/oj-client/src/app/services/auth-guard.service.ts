@@ -8,17 +8,17 @@ export class AuthGuardService implements CanActivate{
 
   canActivate(): boolean {
     if(this.auth.authenticated()) {
-  //    console.log("pass guard");
       return true;
     } else {
       //redirect to homepage
       this.router.navigate(['/problems']);
+      return false;
     }
   }
 
   isAdmin(): boolean {
     if(this.auth.authenticated() &&
-          this.auth.userProfile.roles.includes('Admin')) {
+          this.auth.getCurrentProfile().roles.includes('Admin')) {
             return true;
     } else {
       return false;
