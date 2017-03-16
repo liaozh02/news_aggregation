@@ -12,9 +12,11 @@ import { ProblemDetailComponent } from './components/problem-detail/problem-deta
 import { DataService } from "./services/data.service";
 import { Auth } from "./services/auth.service";
 import { AuthGuardService } from "./services/auth-guard.service";
+import { CollaborationService } from "./services/collaboration.service";
 import { NewProblemComponent } from './components/new-problem/new-problem.component';
 import { NavbarComponent } from './components/navbar/navbar.component';
 import { ProfileComponent } from './components/profile/profile.component';
+import { EditorComponent } from './components/editor/editor.component';
 
 @NgModule({
   declarations: [
@@ -23,7 +25,8 @@ import { ProfileComponent } from './components/profile/profile.component';
     ProblemDetailComponent,
     NewProblemComponent,
     NavbarComponent,
-    ProfileComponent
+    ProfileComponent,
+    EditorComponent
   ],
   imports: [
     BrowserModule,
@@ -42,6 +45,10 @@ import { ProfileComponent } from './components/profile/profile.component';
  {
     provide: "authGuard",
     useClass: AuthGuardService
+  },
+  {
+    provide: "collaboration",
+    useClass: CollaborationService
   },
   AuthGuardService
   ],

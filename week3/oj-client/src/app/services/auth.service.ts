@@ -15,10 +15,10 @@ export class Auth {
   domain = 'aliceliao.auth0.com';
 
   lock = new Auth0Lock(this.clientId, this.domain, {
-//    auth:{ redirectUrl: 'http://localhost:3000',
-//           redirect: true,
-//          responseType: 'token'}
-      auth:{redirect: false, responseType: 'token'}
+    auth:{ redirectUrl: 'http://localhost:3000/problems',
+           redirect: true,
+          responseType: 'token'}
+//      auth:{redirect: false, responseType: 'token'}
   });
   //Store profile object in auth class
   userProfile: any;
