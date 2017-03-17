@@ -15,7 +15,11 @@ export class NavbarComponent implements OnInit {
   constructor(@Inject('auth0') private auth) { }
 
   ngOnInit() {
-      this.getProfile();
+    this.getProfile();
+  }
+
+  ngOnDestroy() {
+    this.subscriptionProblems.unsubscribe();
   }
 
   getProfile(): void {

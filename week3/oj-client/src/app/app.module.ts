@@ -49,8 +49,7 @@ import { EditorComponent } from './components/editor/editor.component';
   {
     provide: "collaboration",
     useClass: CollaborationService
-  },
-  AuthGuardService
+  }
   ],
   bootstrap: [AppComponent]
 })

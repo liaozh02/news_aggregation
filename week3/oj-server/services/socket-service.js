@@ -1,5 +1,5 @@
 var redisClient = require("../modules/redis-client.js");
-const TIMEOUT_IN_SECONDS = 600;
+const TIMEOUT_IN_SECONDS = 3600;
 
 module.exports = function(io) {
 
@@ -83,7 +83,6 @@ module.exports = function(io) {
             let key = sessionPath + '/' + sessionId;
             let value = JSON.stringify(socketSessionList[sessionId]['cachedChangeEvents']);
             redisClient.set(key, value, redisClient.redisPrint);
-            console.log(key);
             redisClient.expire(key, TIMEOUT_IN_SECONDS);
             delete socketSessionList[sessionId];
           }

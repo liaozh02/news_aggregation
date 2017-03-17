@@ -19,6 +19,10 @@ export class ProblemListComponent implements OnInit {
     this.getProblems();
   }
 
+  ngOnDestroy() {
+    this.subscriptionProblems.unsubscribe();
+  }
+
   getProblems(): void {
     this.subscriptionProblems = this.data.getProblems()
                                         .subscribe(problems => this.problems = problems);

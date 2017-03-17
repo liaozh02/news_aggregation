@@ -10,7 +10,20 @@ var socket_io = require('socket.io');
 var io = socket_io();
 var socketService = require('./services/socket-service.js')(io);
 
-mongoose.connect("mongodb://alice:alice@ds127260.mlab.com:27260/bittigeralice");
+var mongoUrl = "mongodb://alice:alice@ds127260.mlab.com:27260/bittigeralice";
+//mongoose.connect("mongodb://alice:alice@ds127260.mlab.com:27260/bittigeralice");
+mongoose.connect(mongoUrl);
+var db = mongoose.connection;
+db.on('error', function() {
+    console.log('error connecting with mongodb server');
+})
+db.on('open', function() {
+    console.log('connected to mongodb server');
+})
+db.on('disconnected', function() {
+    mongoose.connect(mongoUrl);
+    db = mongoose.connection;
+})
 app.use(express.static(path.join(__dirname, '../public')));
 
 app.use("/", indexRouter);
