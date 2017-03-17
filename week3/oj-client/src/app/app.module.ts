@@ -1,6 +1,6 @@
 import { BrowserModule } from '@angular/platform-browser';
 import { NgModule } from '@angular/core';
-import { FormsModule } from '@angular/forms';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { HttpModule } from '@angular/http';
 
 import { routing } from "./app.routes";
@@ -13,10 +13,13 @@ import { DataService } from "./services/data.service";
 import { Auth } from "./services/auth.service";
 import { AuthGuardService } from "./services/auth-guard.service";
 import { CollaborationService } from "./services/collaboration.service";
+import { SearchService } from "./services/search.service";
+
 import { NewProblemComponent } from './components/new-problem/new-problem.component';
 import { NavbarComponent } from './components/navbar/navbar.component';
 import { ProfileComponent } from './components/profile/profile.component';
 import { EditorComponent } from './components/editor/editor.component';
+import { SearchPipe } from './pipes/search.pipe';
 
 @NgModule({
   declarations: [
@@ -26,13 +29,15 @@ import { EditorComponent } from './components/editor/editor.component';
     NewProblemComponent,
     NavbarComponent,
     ProfileComponent,
-    EditorComponent
+    EditorComponent,
+    SearchPipe
   ],
   imports: [
     BrowserModule,
     FormsModule,
     HttpModule,
-    routing
+    routing,
+    ReactiveFormsModule
   ],
   providers: [{
     provide: "data",
@@ -49,7 +54,11 @@ import { EditorComponent } from './components/editor/editor.component';
   {
     provide: "collaboration",
     useClass: CollaborationService
-  }
+  },
+  {
+     provide: "search",
+     useClass: SearchService
+   }
   ],
   bootstrap: [AppComponent]
 })
