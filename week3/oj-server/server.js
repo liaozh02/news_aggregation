@@ -6,10 +6,6 @@ var mongoose = require("mongoose");
 var path = require('path')
 var http = require('http');
 
-var socket_io = require('socket.io');
-var io = socket_io();
-var socketService = require('./services/socket-service.js')(io);
-
 var mongoUrl = "mongodb://alice:alice@ds127260.mlab.com:27260/bittigeralice";
 //mongoose.connect("mongodb://alice:alice@ds127260.mlab.com:27260/bittigeralice");
 mongoose.connect(mongoUrl);
@@ -24,6 +20,8 @@ db.on('disconnected', function() {
     mongoose.connect(mongoUrl);
     db = mongoose.connection;
 })
+
+
 app.use(express.static(path.join(__dirname, '../public')));
 
 app.use("/", indexRouter);
@@ -38,7 +36,13 @@ app.use(function(req, res) {
 })
 */
 var server = http.createServer(app);
-io.attach(server);
+//var io = require('socket.io')(server, {'pingTimeout': 4000, 'pingInterval': 2000});
+var io = require('socket.io')(server);
+//var io = require('socket.io')(server, {'path': '/websocket'});
+
+var socketService = require('./services/socket-service.js')(io);
+
+//io.attach(server);
 server.listen(3000);
 
 server.on('error', onError);

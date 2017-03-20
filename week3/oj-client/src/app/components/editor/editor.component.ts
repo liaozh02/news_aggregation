@@ -58,8 +58,13 @@ export class EditorComponent implements OnInit {
     document.getElementsByTagName('textarea')[0].focus();
     this.collaboration.init(this.editor, this.sessionId);
     this.editor.lastAppliedChange = null;
+    window.onpopstate = (() =>{
+      console.log('window changed, disconnect socket');
+      this.collaboration.disconnectSocket();
+    })
 
-    this.editor.on('change', (e) =>{
+
+    this.editor.getSession().on('change', (e) =>{
       if( this.editor.lastAppliedChange != e) {
         console.log('editor change request ' + JSON.stringify(e));
         this.collaboration.change(JSON.stringify(e));

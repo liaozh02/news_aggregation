@@ -6,8 +6,10 @@ module.exports = function(io) {
   var socketSessionList = [];
   var sessionToSocketID = [];
   var sessionPath = "/project1";
+//  var nsp = io.of('/problems');
 
   io.on('connection', (socket) => {
+//nsp.on('connection', (socket) => {
     let sessionId = socket.handshake.query.sessionId;
     console.log('sessionId is ' + sessionId + '  socketId :' + socket.id);
     sessionToSocketID[socket.id] = sessionId;
@@ -95,12 +97,14 @@ module.exports = function(io) {
 
     function forwardEvents(eventName, socketId, dataString) {
       let sessionId = sessionToSocketID[socketId];
-      console.log(eventName + 'Session :' +  sessionId + dataString);
+      console.log(eventName + 'Session :' +  sessionId + "socketId: " + socketId + dataString);
       if(sessionId in socketSessionList) {
-          for(id of socketSessionList[sessionId]['participants']) {
-            if(id != socketId) {
-          //    console.log('Emit change to iD ' + id);
-              io.to(id).emit(eventName, dataString);
+          let participants = socketSessionList[sessionId]['participants']
+          for(let i = 0; i < participants.length; i++) {
+            if(socketId != participants[i]) {
+        //      console.log('Emit change to iD ' + participants[i]);
+                io.to(participants[i]).emit(eventName, dataString);
+      //           nsp.to(participants[i]).emit(eventName, dataString);
             }
           }
       }
