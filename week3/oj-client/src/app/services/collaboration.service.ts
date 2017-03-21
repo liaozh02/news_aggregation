@@ -10,6 +10,7 @@ export class CollaborationService {
   collaborationSocket: any;
   partnerInfoLists: any = [];
   partnerNum: number = 0;
+  fromSetValue: boolean = false;
   constructor() { }
 
   init(editor: any, sessionId: string): void {
@@ -19,6 +20,13 @@ export class CollaborationService {
       delta = JSON.parse(delta);
       editor.lastAppliedChange = delta;
       editor.getSession().getDocument().applyDeltas([delta]);
+    });
+
+    this.collaborationSocket.on('snapshot', (data) =>{
+      console.log("collaboration receive snapshot");
+      this.fromSetValue = true;
+      editor.getSession().getDocument().setValue(data);
+      this.fromSetValue = false;
     });
 
     this.collaborationSocket.on("cursorMove", (cursor) => {

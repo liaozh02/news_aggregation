@@ -1,15 +1,35 @@
 var redisClient = require("../modules/redis-client.js");
+var Document = require('../modules/index.js');
+
 const TIMEOUT_IN_SECONDS = 3600;
+const SNAPSHOT_INTERVAL_MILLESEC = 600000;
 
 module.exports = function(io) {
 
   var socketSessionList = [];
   var sessionToSocketID = [];
-  var sessionPath = "/project1";
-//  var nsp = io.of('/problems');
+  var documentSessionList = [];
+  var sessionPath = "/project2s";
+  var defaultContent = {
+    'Java': `public class Example() {
+      public static void main(String[] args){
+        //Type your code here
+      }
+    }`,
+    'C++': `#include <iostream>
+    using namespace std;    ​
+    int main() {
+       // Type your C++ code here
+       return 0;
+    }`,
+    'Python': `class Solution:
+      def example():
+      # Write your Python code here`
+  }
 
   io.on('connection', (socket) => {
 //nsp.on('connection', (socket) => {
+
     let sessionId = socket.handshake.query.sessionId;
     console.log('sessionId is ' + sessionId + '  socketId :' + socket.id);
     sessionToSocketID[socket.id] = sessionId;
@@ -19,28 +39,33 @@ module.exports = function(io) {
       socketSessionList[sessionId].participants.push(socket.id);
       console.log(socketSessionList[sessionId].participants);
     } else {
-      redisClient.get(sessionPath + '/' + sessionId, function(data) {
-        if(data) {
-          console.log("session teminated previously, recover from redis");
-          socketSessionList[sessionId] = {
-            'cachedChangeEvents': JSON.parse(data),
-            'participants': []
-          };
-        }
-        else {
-          console.log("creating new session: ", sessionId);
-          socketSessionList[sessionId] = {
-            'cachedChangeEvents': [],
-            'participants': []
-          };
-        }
-        socketSessionList[sessionId].participants.push(socket.id);
-        console.log(socketSessionList[sessionId].participants);
+       let key = sessionPath + '/' + sessionId;
+       redisClient.llen(key, function(length) {
+         if(length) {
+           console.log("session teminated previously, recover from redis");
+           redisClient.lindex(key, 0, function(data) {
+              console.log("get latest snapshot from redis", data);
+              documentSessionList[sessionId] = new Document(data);
+              socketSessionList[sessionId] = {
+                'snapShot': data,
+                'cachedChangeEvents': [],
+                'participants': []
+              }   //list
+              socketSessionList[sessionId].participants.push(socket.id);
+           });  //lindex
+         }  //length
+         else {
+           console.log("creating new session: ", sessionId);
+           documentSessionList[sessionId] = new Document(defaultContent['Java']);
+           socketSessionList[sessionId] = {
+             'snapShot': documentSessionList[sessionId].getValue(),
+             'cachedChangeEvents': [],
+             'participants': []
+           };
+           socketSessionList[sessionId].participants.push(socket.id);
+         }
       });
     }
-
-
-
 
     //After Connection, listen to event;
     socket.on('change', (delta) => {
@@ -63,9 +88,10 @@ module.exports = function(io) {
       let sessionId = sessionToSocketID[socket.id];
       console.log("restoreBuffer for session " + sessionId + " socket: " + socket.id);
       if(sessionId in socketSessionList) {
+        socket.emit('snapshot', socketSessionList[sessionId]['snapShot']);
         let changeEvents = socketSessionList[sessionId]['cachedChangeEvents'];
-
         for(let i = 0; i < changeEvents.length; i++) {
+          console.log("changeEvents:    " + changeEvents[i][1]);
           socket.emit(changeEvents[i][0], changeEvents[i][1]);
         }
       }
@@ -79,14 +105,8 @@ module.exports = function(io) {
         let index = participants.indexOf(socket.id);
         if( index >= 0) {
           participants.splice(index, 1);
-      //    console.log("After remove:  " + socketSessionList[sessionId].participants);
           if(participants.length == 0) {
-            console.log("Last participant leave. Session Close. Save record to Redis");
-            let key = sessionPath + '/' + sessionId;
-            let value = JSON.stringify(socketSessionList[sessionId]['cachedChangeEvents']);
-            redisClient.set(key, value, redisClient.redisPrint);
-            redisClient.expire(key, TIMEOUT_IN_SECONDS);
-            delete socketSessionList[sessionId];
+            console.log("Last participant leave");
           }
         }
         else {
@@ -95,6 +115,7 @@ module.exports = function(io) {
       }
     })
 
+
     function forwardEvents(eventName, socketId, dataString) {
       let sessionId = sessionToSocketID[socketId];
       console.log(eventName + 'Session :' +  sessionId + "socketId: " + socketId + dataString);
@@ -102,7 +123,7 @@ module.exports = function(io) {
           let participants = socketSessionList[sessionId]['participants']
           for(let i = 0; i < participants.length; i++) {
             if(socketId != participants[i]) {
-        //      console.log('Emit change to iD ' + participants[i]);
+              console.log('Emit change to iD ' + participants[i]);
                 io.to(participants[i]).emit(eventName, dataString);
       //           nsp.to(participants[i]).emit(eventName, dataString);
             }
@@ -113,4 +134,37 @@ module.exports = function(io) {
       }
     }
   })
+
+  let snapShotInterval = setInterval(function() {
+    console.log("Time to save snapshot");
+    socketSessionList.forEach(function(element, index, array) {
+      console.log("index" + index);
+      if(element['snapShot']) {
+        let changeEvents = element['cachedChangeEvents'];
+        for(let i = 0; i < changeEvents.length; i++) {
+          documentSessionList[index].applyDeltas([JSON.parse(changeEvents[i][1])])
+        }
+        console.log("save sesssion " + index + " snapshot to redis");
+        key = sessionPath + '/' + index;
+        console.log("snapshotValue", documentSessionList[index].getValue())
+        console.log('redis key', key);
+        redisClient.lpush(key, documentSessionList[index].getValue(), redisClient.redisPrint);
+        redisClient.llen(key, function(length){
+          if(length == 1) {
+            redisClient.expire(key,  TIMEOUT_IN_SECONDS);
+          }
+        });
+
+        if(socketSessionList[index]['participants'].length == 0) {
+          delete socketSessionList[index];
+          console.log("delete socketSessionlist");
+        } else{
+          console.log("Snapshot save participants" +socketSessionList[index]['participants']);
+          socketSessionList[index]['snapShot'] = documentSessionList[index].getValue()
+          socketSessionList[index]['cachedChangeEvents'] = [];
+        }
+      }
+    })
+  }, SNAPSHOT_INTERVAL_MILLESEC);
+
 }

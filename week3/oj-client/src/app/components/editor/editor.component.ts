@@ -65,7 +65,7 @@ export class EditorComponent implements OnInit {
 
 
     this.editor.getSession().on('change', (e) =>{
-      if( this.editor.lastAppliedChange != e) {
+      if( this.editor.lastAppliedChange != e && !this.collaboration.fromSetValue) {
         console.log('editor change request ' + JSON.stringify(e));
         this.collaboration.change(JSON.stringify(e));
       }
@@ -87,7 +87,8 @@ export class EditorComponent implements OnInit {
 
   resetEditor(): void {
     this.editor.getSession().setMode("ace/mode/"+ this.modeMap[this.language]);
-    this.editor.setValue(this.defaultContent[this.language]);
+//    this.editor.setValue(this.defaultContent[this.language]);
+    this.editor.getSession().getDocument().setValue(this.defaultContent[this.language]);
   }
 
   submit(): void {

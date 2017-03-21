@@ -21,6 +21,36 @@ function get(key, callback) {
   })
 }
 
+function lpush(key, value, callback) {
+  client.lpush(key, value, function(err, res) {
+    if(err) {
+      console.log(err);
+      return;
+    }
+    callback(res);
+  })
+}
+
+function llen(key, callback) {
+  client.llen(key, function(err, res) {
+    if(err) {
+      console.log(err);
+      return;
+    }
+    callback(res);
+  })
+}
+
+function lindex(key, index, callback) {
+  client.lindex(key, index, function(err, res) {
+    if(err) {
+      console.log(err);
+      return;
+    }
+    callback(res);
+  })
+}
+
 function expire(key, timeInSeconds) {
   client.expire(key, timeInSeconds);
 }
@@ -34,5 +64,8 @@ module.exports = {
   set: set,
   expire: expire,
   quit: quit,
+  lpush: lpush,
+  lindex: lindex,
+  llen: llen,
   redisPrint: redis.print
 }
