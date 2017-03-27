@@ -14,7 +14,23 @@ export class CollaborationService {
   constructor() { }
 
   init(editor: any, sessionId: string): void {
-    this.collaborationSocket = io(window.location.origin, { query: 'sessionId=' + sessionId});
+    this.collaborationSocket = io(window.location.origin, 
+                                {query: 'sessionId=' + sessionId + '&' + 'client=' + editor.userName
+                                        + '&' + 'problemId=' + editor.problemId + '&' +  'type=' + editor.type});
+
+    this.collaborationSocket.on("create", (sessionId) => {
+      console.log("Got new session Id:" + sessionId + " from Server ");
+      editor.sessionId = sessionId;
+      let key = editor.userName + '/' + editor.problemId + '/';
+      localStorage.setItem(key, sessionId);
+      let state = {
+          id: editor.problemId,
+          name: 'session'
+      }
+      window.history.pushState(state, "session", `/problems/${editor.problemId}/${editor.sessionId}`);   
+      this.restoreBuffer();
+   });
+    
     this.collaborationSocket.on("change", (delta) => {
       console.log("collaboration receive change " + delta);
       delta = JSON.parse(delta);
@@ -22,12 +38,25 @@ export class CollaborationService {
       editor.getSession().getDocument().applyDeltas([delta]);
     });
 
+
     this.collaborationSocket.on('snapshot', (data) =>{
       console.log("collaboration receive snapshot");
+      console.log(data);
       this.fromSetValue = true;
       editor.getSession().getDocument().setValue(data);
       this.fromSetValue = false;
     });
+
+    this.collaborationSocket.on('sessionProp', (data) =>{
+      console.log("collaboration receive session Property");
+      console.log(data);
+      data = JSON.parse(data);
+      editor.type = data['type'];
+      editor.shareList = data['shareList'];
+      console.log(editor.type);
+      console.log(editor.shareList);
+    });
+
 
     this.collaborationSocket.on("cursorMove", (cursor) => {
       console.log("collaboration receive cursorMove " + cursor);
@@ -38,31 +67,35 @@ export class CollaborationService {
       console.log("x: " + x + "y: " + y + " " + partnerId);
 
       if(partnerId in this.partnerInfoLists) {
-        editor.getSession().removeMarker(this.partnerInfoLists[partnerId]['marker']);
-        console.log("remove Marker for " + partnerId);
-      }
-      else {
-        this.partnerInfoLists[partnerId] = {};
+          editor.getSession().removeMarker(this.partnerInfoLists[partnerId]['marker']);
+          console.log("remove Marker for " + partnerId);
+        }
+        else {
+          this.partnerInfoLists[partnerId] = {};
 
-        let css = document.createElement('style');
-        css.type = "text/css";
-        css.innerHTML = ".editor_cursor_" + partnerId
-          + "{ position: absolute; background:" + COLORS[this.partnerNum] + ";"
-          + " z-index: 100; width: 3px !important; }";
-        document.body.appendChild(css);
-        this.partnerNum++;
-      }
+          let css = document.createElement('style');
+          css.type = "text/css";
+          css.innerHTML = ".editor_cursor_" + partnerId
+            + "{ position: absolute; background:" + COLORS[this.partnerNum] + ";"
+            + " z-index: 100; width: 3px !important; }";
+          document.body.appendChild(css);
+          this.partnerNum++;
+        }
 
-      let Range = ace.require('ace/range').Range;
-      let newMarker = editor.getSession().addMarker(new Range(x, y, x, y+1),
-            'editor_cursor_' + partnerId, true);
-      this.partnerInfoLists[partnerId]['marker'] = newMarker;
+        let Range = ace.require('ace/range').Range;
+        let newMarker = editor.getSession().addMarker(new Range(x, y, x, y+1),
+              'editor_cursor_' + partnerId, true);
+        this.partnerInfoLists[partnerId]['marker'] = newMarker;
     });
   }
 
-
   change(delta: string): void {
     this.collaborationSocket.emit('change', delta);
+  }
+
+  changeType(data: any): void{
+    console.log(data);
+    this.collaborationSocket.emit('changeType',data);
   }
 
   cursorMove(cursor: string): void {

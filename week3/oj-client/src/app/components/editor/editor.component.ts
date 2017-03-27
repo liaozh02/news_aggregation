@@ -1,5 +1,6 @@
 import { Component, OnInit, Inject } from '@angular/core';
 import { ActivatedRoute, Params} from '@angular/router';
+import { Router } from '@angular/router'
 
 declare var ace: any;
 @Component({
@@ -12,7 +13,7 @@ export class EditorComponent implements OnInit {
   editor: any;
 
   defaultContent = {
-    'Java': `public class Example() {
+    'Java': `public class Example {
       public static void main(String[] args){
         //Type your code here
       }
@@ -35,29 +36,66 @@ export class EditorComponent implements OnInit {
   }
 
   public languages: string[] = ['Java', 'C++', 'Python'];
+  public types: string[] = ['PRIVATE', 'PUBLIC', 'SHARE'];
   language: string = 'Java'; // default
-  sessionId: string;
+  type: string = 'PRIVATE';//default
+  sessionId: string = "";
+  problemId: string = "";
+  userName: string = "";
+  shareList: string[] = [];
+  newPerson:string;
+  url = window.location.href;
 
   constructor(@Inject('collaboration') private collaboration,
-              private route: ActivatedRoute) { }
+              @Inject('auth0') private auth,
+              private route: ActivatedRoute,
+              private router: Router) { }
 
   ngOnInit() {
     this.route.params
       .subscribe(params => {
-        this.sessionId = params['id'];
+        this.problemId = params['id'];
+        if(this.auth.authenticated()) {          
+          let key = this.userName + '/' + this.problemId + '/';
+          if(params['session']) {
+            this.sessionId = params['session'];
+          } else if(localStorage.getItem(key)){
+            this.sessionId = localStorage.getItem(key);
+            let state = {
+              id: this.problemId,
+              name: 'session'
+            }
+          window.history.pushState(state, "session", `/problems/${this.problemId}/${this.sessionId}`);
+          this.url = window.location.href;
+          }
+          else{
+            this.sessionId = "";
+          }
+        }       
         this.initEditor();
-      })
+      })    
     }
+
 
   initEditor(){
     this.editor = ace.edit("editor");
     this.editor.setTheme("ace/theme/eclipse");
-//    this.editor.setTheme("ace/theme/xcode");
     this.resetEditor();
     this.editor.$blockScrolling = Infinity;
     document.getElementsByTagName('textarea')[0].focus();
+    if(this.auth.authenticated()) {
+      this.editor.userName = this.auth.getCurrentProfile().nickname;
+      this.editor.language = this.language;
+      this.editor.type = this.type;
+      this.editor.problemId = this.problemId;
+      this.initSocket();
+    }
+  }
+
+  initSocket() {
     this.collaboration.init(this.editor, this.sessionId);
     this.editor.lastAppliedChange = null;
+
     window.onpopstate = (() =>{
       console.log('window changed, disconnect socket');
       this.collaboration.disconnectSocket();
@@ -77,14 +115,38 @@ export class EditorComponent implements OnInit {
         this.collaboration.cursorMove(JSON.stringify(cursor));
     }.bind(this));
 
-    this.collaboration.restoreBuffer();
+//    this.collaboration.restoreBuffer();
   }
+
 
   setLanguage(language: string) {
     this.language = language;
     this.resetEditor();
   }
 
+  setPublic() {
+    this.type = this.editor.type ="PUBLIC";
+    this.shareList = this.editor.shareList = [];
+    console.log("session set to public");
+    let data = {
+      'type': this.type,
+      'shareList': this.shareList
+    }
+    this.collaboration.changeType(JSON.stringify(data));
+  }
+
+  addShare() {
+    this.type = this.editor.type = "SHARE";
+    this.editor.shareList.push(this.newPerson);
+    this.shareList = this.editor.shareList;
+    console.log(this.shareList);
+    let data = {
+      'type': this.type,
+      'shareList': this.shareList
+    }
+    this.collaboration.changeType(JSON.stringify(data));
+
+  }
   resetEditor(): void {
     this.editor.getSession().setMode("ace/mode/"+ this.modeMap[this.language]);
 //    this.editor.setValue(this.defaultContent[this.language]);
@@ -94,6 +156,11 @@ export class EditorComponent implements OnInit {
   submit(): void {
     let userCode = this.editor.getValue();
     console.log(userCode);
+  }
+
+  login(): void {
+    console.log("sign in");
+    this.auth.login();
   }
 
 }

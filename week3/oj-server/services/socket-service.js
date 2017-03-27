@@ -1,170 +1,307 @@
 var redisClient = require("../modules/redis-client.js");
 var Document = require('../modules/index.js');
+const uuid = require('uuid/v4');
 
-const TIMEOUT_IN_SECONDS = 3600;
+const TIMEOUT_IN_SECONDS = 36000;
 const SNAPSHOT_INTERVAL_MILLESEC = 600000;
 
 module.exports = function(io) {
 
-  var socketSessionList = [];
-  var sessionToSocketID = [];
-  var documentSessionList = [];
-  var sessionPath = "/project2s";
-  var defaultContent = {
-    'Java': `public class Example() {
+    var sessionList = [];
+    var socketSessionList = [];
+    var socketToSessionId = [];
+    var socketToUserId = [];
+    var documentSessionList = [];
+    var sessionPropList = [];
+    var sessionPath = "/project3s";
+    var defaultContent = {
+        'Java': `public class Example {
       public static void main(String[] args){
         //Type your code here
       }
     }`,
-    'C++': `#include <iostream>
+        'C++': `#include <iostream>
     using namespace std;    ​
     int main() {
        // Type your C++ code here
        return 0;
     }`,
-    'Python': `class Solution:
+        'Python': `class Solution:
       def example():
       # Write your Python code here`
-  }
+    }
 
-  io.on('connection', (socket) => {
-//nsp.on('connection', (socket) => {
+    io.on('connection', (socket) => {
+        //nsp.on('connection', (socket) => {
+        let sessionId = socket.handshake.query.sessionId;
+        let client = socket.handshake.query.client;
+        let type = socket.handshake.query.type;
+        let problemId = socket.handshake.query.problemId;
+        console.log('sessionId: ' + sessionId + '  client: ' + client +
+            '  socketId: ' + socket.id + '  problem: ' + problemId +
+            '  type:' + type);
 
-    let sessionId = socket.handshake.query.sessionId;
-    console.log('sessionId is ' + sessionId + '  socketId :' + socket.id);
-    sessionToSocketID[socket.id] = sessionId;
+        if (sessionId == "") {
+            let key = sessionPath + '/' + client + '/' + problemId;
+            redisClient.get(key, function(data) {
+                if (data) {
+                    sessionId = data;
+                    if (sessionId in socketSessionList) {
+                        console.log("Join current session: " + sessionId);
+                        if (validateUser(sessionId, client)) {
+                            updateList(sessionId, client, socket.id);
+                            socket.emit('create', sessionId);
+                        } else {
+                            console.log("client:" + client + "not allowed in the session");
+                            socket.disconnect(true);
+                        }
+                    } else {
+                        sessionList.push(sessionId);
+                        let key = sessionPath + '/' + sessionId;
+                        redisClient.llen(key, function(length) {
+                            if (length) {
+                                redisRestore(sessionId, client, socket.id, function() {
+                                    socket.emit('create', sessionId);
+                                });
+                            } else {
+                                console.log('record missed! for sessionId:' + sessionId);
+                                createNewSession(sessionId, client, socket.id);
+                                redisSave(sessionId);
+                                socket.emit('create', sessionId);
+                            }
+                        });
+                    }
+                } else {
+                    sessionId = uuid();
+                    console.log("creating new uuid sessionId: ", sessionId);
+                    sessionList.push(sessionId);
+                    createNewSession(sessionId, client, socket.id);
+                    let key = sessionPath + '/' + client + '/' + problemId;
+                    redisClient.set(key, sessionId, redisClient.redisPrint);
+                    socket.emit('create', sessionId);
+                }
+            });
+        } //No sessionId, create new sesion or restore from database
+        else {
+            if (sessionId in socketSessionList) { //add new participant
+                console.log("Join current session: " + sessionId);
+                if (validateUser(sessionId, client)) {
+                    updateList(sessionId, client, socket.id)
+                    socket.emit('create', sessionId);
+                } else {
+                    console.log("client:" + client + "not allowed in the session");
+                    socket.disconnect(true);
+                }
+            } else {
+                sessionList.push(sessionId);
+                redisRestore(sessionId, client, socket.id, function() {
+                    socket.emit('create', sessionId);
+                });
+            }
+        }
 
-    if(sessionId in socketSessionList) {
-      console.log("Join current session: " + sessionId);
-      socketSessionList[sessionId].participants.push(socket.id);
-      console.log(socketSessionList[sessionId].participants);
-    } else {
-       let key = sessionPath + '/' + sessionId;
-       redisClient.llen(key, function(length) {
-         if(length) {
-           console.log("session teminated previously, recover from redis");
-           redisClient.lindex(key, 0, function(data) {
-              console.log("get latest snapshot from redis", data);
-              documentSessionList[sessionId] = new Document(data);
-              socketSessionList[sessionId] = {
-                'snapShot': data,
+        socket.on('change', (delta) => {
+            let sessionId = socketToSessionId[socket.id];
+            if (sessionId in socketSessionList) {
+                socketSessionList[sessionId]['cachedChangeEvents'].push(["change",
+                    delta, Date.now()
+                ]);
+            }
+
+            forwardEvents('change', socket.id, delta);
+        })
+
+        socket.on('cursorMove', (cursor) => {
+            cursor = JSON.parse(cursor);
+            cursor['clientId'] = socket.id;
+            forwardEvents('cursorMove', socket.id, JSON.stringify(cursor));
+
+        })
+
+        socket.on('changeType', (data) => {
+            let sessionId = socketToSessionId[socket.id]
+            data = JSON.parse(data);
+            console.log("session:" + sessionId + 'type change to' + data['type']);
+            sessionPropList[sessionId]['type'] = data['type'];
+            console.log("session:" + sessionId + 'shareList change to' + data['shareList']);
+            sessionPropList[sessionId]['shareList'] = data['shareList'];
+            console.log(sessionPropList[sessionId]['shareList']);
+            redisSave(sessionId);
+        })
+
+        socket.on('restoreBuffer', () => {
+            let sessionId = socketToSessionId[socket.id];
+            console.log("restoreBuffer for session " + sessionId + " socket: " + socket.id);
+            if (sessionId in socketSessionList) {
+                //  socket.emit('snapshot', socketSessionList[sessionId]['snapShot']);
+                let prop = {
+                    'type': sessionPropList[sessionId]['type'],
+                    'shareList': sessionPropList[sessionId]['shareList']
+                }
+                prop = JSON.stringify(prop);
+                console.log(prop);
+                socket.emit('sessionProp', prop);
+                socket.emit('snapshot', documentSessionList[sessionId].getValue());
+                let changeEvents = socketSessionList[sessionId]['cachedChangeEvents'];
+                console.log(changeEvents);
+                for (let i = 0; i < changeEvents.length; i++) {
+                    //         console.log("changeEvents:    " + changeEvents[i][1]);
+                    socket.emit(changeEvents[i][0], changeEvents[i][1]);
+                }
+            }
+        })
+
+        socket.on('disconnect', function() {
+            let sessionId = socketToSessionId[socket.id];
+            console.log('sessionId: ' + sessionId + "socketId: " + socket.id + ' disconnected');
+            if (sessionId in socketSessionList) {
+                let participants = socketSessionList[sessionId]['participants'];
+                let index = participants.indexOf(socket.id);
+                if (index >= 0) {
+                    participants.splice(index, 1);
+                    if (participants.length == 0) {
+                        console.log("Last participant leave");
+                    }
+                } else {
+                    console.log("cannot find socket.id");
+                }
+            }
+        })
+
+
+        function forwardEvents(eventName, socketId, dataString) {
+            let sessionId = socketToSessionId[socketId];
+            //        console.log(eventName + 'Session :' + sessionId + "socketId: " + socketId + dataString);
+            if (sessionId in socketSessionList) {
+                let participants = socketSessionList[sessionId]['participants']
+                for (let i = 0; i < participants.length; i++) {
+                    if (socketId != participants[i]) {
+                        //     console.log('Emit change to iD ' + participants[i]);
+                        io.to(participants[i]).emit(eventName, dataString);
+                        //           nsp.to(participants[i]).emit(eventName, dataString);
+                    }
+                }
+            } else {
+                console.log("Error! Cannot bind sessionId to")
+            }
+        }
+
+        function redisRestore(sessionId, client, socketId, callback) {
+            console.log('session teminated previously, recover from redis');
+            let key = sessionPath + '/' + sessionId;
+            redisClient.lindex(key, 0, function(data) {
+                if (data) {
+                    console.log('get latest data from redis', data);
+                    data = JSON.parse(data);
+                    //     console.log(data);
+                    if (data['owner'] != client) {
+                        console.log("Error!!user-session record not match!")
+                        validateUser
+                    }
+                    documentSessionList[sessionId] = new Document(data['snapShot']);
+                    sessionPropList[sessionId] = {
+                        'owner': data['owner'],
+                        'type': data['type'],
+                        'shareList': data['shareList']
+                    }
+                    socketSessionList[sessionId] = {
+                            'cachedChangeEvents': [],
+                            'participants': [],
+                        } //list
+                    updateList(sessionId, client, socket.id)
+                    callback();
+                } else {
+                    console.log("data expired");
+                    createNewSession(sessionId, client, socketId);
+                    redisSave(sessionId);
+                    callback();
+                }
+            });
+        }
+
+        function createNewSession(sessionId, client, socketId) {
+            console.log("create new session:" + sessionId + " client:" + client +
+                " socketId:" + socketId)
+            documentSessionList[sessionId] = new Document(defaultContent['Java']);
+            socketSessionList[sessionId] = {
                 'cachedChangeEvents': [],
                 'participants': []
-              }   //list
-              socketSessionList[sessionId].participants.push(socket.id);
-           });  //lindex
-         }  //length
-         else {
-           console.log("creating new session: ", sessionId);
-           documentSessionList[sessionId] = new Document(defaultContent['Java']);
-           socketSessionList[sessionId] = {
-             'snapShot': documentSessionList[sessionId].getValue(),
-             'cachedChangeEvents': [],
-             'participants': []
-           };
-           socketSessionList[sessionId].participants.push(socket.id);
-         }
-      });
-    }
-
-    //After Connection, listen to event;
-    socket.on('change', (delta) => {
-      let sessionId = sessionToSocketID[socket.id];
-      if(sessionId in socketSessionList) {
-        socketSessionList[sessionId]['cachedChangeEvents'].push(["change",
-          delta, Date.now()]);
-      }
-      forwardEvents('change', socket.id, delta);
-    })
-
-    socket.on('cursorMove', (cursor) => {
-      cursor = JSON.parse(cursor);
-      cursor['clientId'] = socket.id;
-      forwardEvents('cursorMove', socket.id, JSON.stringify(cursor));
-
-    })
-
-    socket.on('restoreBuffer', () => {
-      let sessionId = sessionToSocketID[socket.id];
-      console.log("restoreBuffer for session " + sessionId + " socket: " + socket.id);
-      if(sessionId in socketSessionList) {
-        socket.emit('snapshot', socketSessionList[sessionId]['snapShot']);
-        let changeEvents = socketSessionList[sessionId]['cachedChangeEvents'];
-        for(let i = 0; i < changeEvents.length; i++) {
-          console.log("changeEvents:    " + changeEvents[i][1]);
-          socket.emit(changeEvents[i][0], changeEvents[i][1]);
-        }
-      }
-    })
-
-    socket.on('disconnect', function(){
-      let sessionId = sessionToSocketID[socket.id];
-      console.log('sessionId: ' + sessionId + "socketId: " + socket.id + ' disconnected');
-      if(sessionId in socketSessionList) {
-        let participants = socketSessionList[sessionId]['participants'];
-        let index = participants.indexOf(socket.id);
-        if( index >= 0) {
-          participants.splice(index, 1);
-          if(participants.length == 0) {
-            console.log("Last participant leave");
-          }
-        }
-        else {
-          console.log("cannot find socket.id");
-        }
-      }
-    })
-
-
-    function forwardEvents(eventName, socketId, dataString) {
-      let sessionId = sessionToSocketID[socketId];
-      console.log(eventName + 'Session :' +  sessionId + "socketId: " + socketId + dataString);
-      if(sessionId in socketSessionList) {
-          let participants = socketSessionList[sessionId]['participants']
-          for(let i = 0; i < participants.length; i++) {
-            if(socketId != participants[i]) {
-              console.log('Emit change to iD ' + participants[i]);
-                io.to(participants[i]).emit(eventName, dataString);
-      //           nsp.to(participants[i]).emit(eventName, dataString);
+            };
+            sessionPropList[sessionId] = {
+                'owner': client,
+                'type': 'PRIVATE',
+                'shareList': []
             }
-          }
-      }
-      else {
-        console.log("Error! Cannot bind sessionId to")
-      }
-    }
-  })
-
-  let snapShotInterval = setInterval(function() {
-    console.log("Time to save snapshot");
-    socketSessionList.forEach(function(element, index, array) {
-      console.log("index" + index);
-      if(element['snapShot']) {
-        let changeEvents = element['cachedChangeEvents'];
-        for(let i = 0; i < changeEvents.length; i++) {
-          documentSessionList[index].applyDeltas([JSON.parse(changeEvents[i][1])])
+            updateList(sessionId, client, socketId);
         }
-        console.log("save sesssion " + index + " snapshot to redis");
-        key = sessionPath + '/' + index;
-        console.log("snapshotValue", documentSessionList[index].getValue())
-        console.log('redis key', key);
-        redisClient.lpush(key, documentSessionList[index].getValue(), redisClient.redisPrint);
-        redisClient.llen(key, function(length){
-          if(length == 1) {
-            redisClient.expire(key,  TIMEOUT_IN_SECONDS);
-          }
-        });
 
-        if(socketSessionList[index]['participants'].length == 0) {
-          delete socketSessionList[index];
-          console.log("delete socketSessionlist");
-        } else{
-          console.log("Snapshot save participants" +socketSessionList[index]['participants']);
-          socketSessionList[index]['snapShot'] = documentSessionList[index].getValue()
-          socketSessionList[index]['cachedChangeEvents'] = [];
+
+
+        function validateUser(sessionId, client) {
+            if (sessionPropList[sessionId]['owner'] != client) {
+                if (sessionPropList[sessionId]['type'] === 'PRIVATE') {
+                    return false;
+                } else if ((sessionPropList[sessionId]['type'] === 'SHARE') &&
+                    (sessionPropList[sessionId]['shareList'].indexOf(client) < 0)) {
+                    return false;
+                } else {
+                    console.log("new client " + client + "joined session owned by" + sessionPropList[sessionId]['owner']);
+                    return true;
+                }
+            } else {
+                console.log("owner " + sessionPropList[sessionId]['owner'] + " reconnect");
+                return true;
+            }
         }
-      }
+
+        function updateList(sessionId, client, socketId) {
+            socketSessionList[sessionId].participants.push(socketId);
+            socketToUserId[socketId] = client;
+            socketToSessionId[socketId] = sessionId;
+        }
     })
-  }, SNAPSHOT_INTERVAL_MILLESEC);
+
+    function redisSave(index) {
+        let key = sessionPath + '/' + index;
+        console.log('redis key', key);
+        let data = {
+            'owner': sessionPropList[index]['owner'],
+            'type': sessionPropList[index]['type'],
+            'shareList': sessionPropList[index]['shareList'],
+            'snapShot': documentSessionList[index].getValue()
+        }
+        data = JSON.stringify(data);
+        console.log("redis save " + data);
+        redisClient.lpush(key, data, redisClient.redisPrint);
+        redisClient.llen(key, function(length) {
+            if (length == 1) {
+                redisClient.expire(key, TIMEOUT_IN_SECONDS);
+            }
+        });
+    }
+
+    let snapShotInterval = setInterval(function() {
+        console.log("Time to save snapshot");
+        sessionList.forEach(function(element, index, array) {
+            console.log("index: " + index + " sessionId:" + element);
+            let sessionId = element;
+            let changeEvents = socketSessionList[sessionId]['cachedChangeEvents'];
+            for (let i = 0; i < changeEvents.length; i++) {
+                documentSessionList[sessionId].applyDeltas([JSON.parse(changeEvents[i][1])])
+            }
+            console.log("save sesssion " + index + " snapshot to redis");
+            redisSave(sessionId);
+            if (socketSessionList[sessionId]['participants'].length == 0) {
+                delete socketSessionList[sessionId];
+                delete documentSessionList[sessionId];
+                sessionList.splice(index, 1);
+                console.log("delete socketSessionlist");
+            } else {
+                console.log("Snapshot save participants" + socketSessionList[sessionId]['participants']);
+                socketSessionList[sessionId]['cachedChangeEvents'] = [];
+            }
+
+        })
+    }, SNAPSHOT_INTERVAL_MILLESEC);
 
 }

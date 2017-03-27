@@ -18,6 +18,10 @@ const routes: Routes = [
     component: ProblemDetailComponent
   },
   {
+    path: "problems/:id/:session",
+    component: ProblemDetailComponent
+  },
+  {
     path: "profile",
     component: ProfileComponent,
     canActivate: ['authGuard']
