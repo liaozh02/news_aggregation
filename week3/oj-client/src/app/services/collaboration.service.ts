@@ -41,20 +41,19 @@ export class CollaborationService {
 
     this.collaborationSocket.on('snapshot', (data) =>{
       console.log("collaboration receive snapshot");
-      console.log(data);
+      //console.log(data);
       this.fromSetValue = true;
       editor.getSession().getDocument().setValue(data);
       this.fromSetValue = false;
     });
 
     this.collaborationSocket.on('sessionProp', (data) =>{
-      console.log("collaboration receive session Property");
-      console.log(data);
+      console.log("collaboration receive session property change from server");
+      //console.log(data);
       data = JSON.parse(data);
       editor.type = data['type'];
       editor.shareList = data['shareList'];
-      console.log(editor.type);
-      console.log(editor.shareList);
+      console.log("type change to:" + editor.type +" shareList: " + editor.shareList)
     });
 
 
@@ -94,7 +93,7 @@ export class CollaborationService {
   }
 
   changeType(data: any): void{
-    console.log(data);
+    console.log("emit change: " + data + "to server");
     this.collaborationSocket.emit('changeType',data);
   }
 

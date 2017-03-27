@@ -48,7 +48,7 @@ module.exports = function(io) {
                     sessionId = data;
                     if (sessionId in socketSessionList) {
                         console.log("Join current session: " + sessionId);
-                        if (validateUser(sessionId, client)) {
+                        if (validateUser(client, sessionProp[sessionId])) {
                             updateList(sessionId, client, socket.id);
                             socket.emit('create', sessionId);
                         } else {
@@ -85,7 +85,7 @@ module.exports = function(io) {
         else {
             if (sessionId in socketSessionList) { //add new participant
                 console.log("Join current session: " + sessionId);
-                if (validateUser(sessionId, client)) {
+                if (validateUser(client, sessionPropList[sessionId])) {
                     updateList(sessionId, client, socket.id)
                     socket.emit('create', sessionId);
                 } else {
@@ -195,21 +195,24 @@ module.exports = function(io) {
                     data = JSON.parse(data);
                     //     console.log(data);
                     if (data['owner'] != client) {
-                        console.log("Error!!user-session record not match!")
-                        validateUser
+                        console.log("Alert!!user-session record not match! Begin Vaidation")
+                        if (validateUser(client, data)) {
+                            documentSessionList[sessionId] = new Document(data['snapShot']);
+                            sessionPropList[sessionId] = {
+                                'owner': data['owner'],
+                                'type': data['type'],
+                                'shareList': data['shareList']
+                            }
+                            socketSessionList[sessionId] = {
+                                    'cachedChangeEvents': [],
+                                    'participants': [],
+                                } //list
+                            updateList(sessionId, client, socket.id)
+                            callback();
+                        } else {
+                            socket.disconnect(true);
+                        }
                     }
-                    documentSessionList[sessionId] = new Document(data['snapShot']);
-                    sessionPropList[sessionId] = {
-                        'owner': data['owner'],
-                        'type': data['type'],
-                        'shareList': data['shareList']
-                    }
-                    socketSessionList[sessionId] = {
-                            'cachedChangeEvents': [],
-                            'participants': [],
-                        } //list
-                    updateList(sessionId, client, socket.id)
-                    callback();
                 } else {
                     console.log("data expired");
                     createNewSession(sessionId, client, socketId);
@@ -237,19 +240,19 @@ module.exports = function(io) {
 
 
 
-        function validateUser(sessionId, client) {
-            if (sessionPropList[sessionId]['owner'] != client) {
-                if (sessionPropList[sessionId]['type'] === 'PRIVATE') {
+        function validateUser(client, sessionProp) {
+            if (sessionProp['owner'] != client) {
+                if (sessionProp['type'] === 'PRIVATE') {
                     return false;
-                } else if ((sessionPropList[sessionId]['type'] === 'SHARE') &&
-                    (sessionPropList[sessionId]['shareList'].indexOf(client) < 0)) {
+                } else if ((sessionProp['type'] === 'SHARE') &&
+                    (sessionProp['shareList'].indexOf(client) < 0)) {
                     return false;
                 } else {
-                    console.log("new client " + client + "joined session owned by" + sessionPropList[sessionId]['owner']);
+                    console.log("new client " + client + "joined session owned by" + sessionProp['owner']);
                     return true;
                 }
             } else {
-                console.log("owner " + sessionPropList[sessionId]['owner'] + " reconnect");
+                console.log("owner " + sessionProp['owner'] + " reconnect");
                 return true;
             }
         }

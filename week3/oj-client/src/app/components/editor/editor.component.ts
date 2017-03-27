@@ -38,11 +38,11 @@ export class EditorComponent implements OnInit {
   public languages: string[] = ['Java', 'C++', 'Python'];
   public types: string[] = ['PRIVATE', 'PUBLIC', 'SHARE'];
   language: string = 'Java'; // default
-  type: string = 'PRIVATE';//default
+ // type: string = 'PRIVATE';//default
   sessionId: string = "";
   problemId: string = "";
   userName: string = "";
-  shareList: string[] = [];
+ // shareList: string[] = [];
   newPerson:string;
   url = window.location.href;
 
@@ -86,7 +86,7 @@ export class EditorComponent implements OnInit {
     if(this.auth.authenticated()) {
       this.editor.userName = this.auth.getCurrentProfile().nickname;
       this.editor.language = this.language;
-      this.editor.type = this.type;
+ //     this.editor.type = this.type;
       this.editor.problemId = this.problemId;
       this.initSocket();
     }
@@ -110,9 +110,11 @@ export class EditorComponent implements OnInit {
     });
 
    this.editor.getSession().getSelection().on('changeCursor', function(){
-        var cursor = this.editor.getSession().getSelection().getCursor();
-        console.log('Curson change request ' + JSON.stringify(cursor));
-        this.collaboration.cursorMove(JSON.stringify(cursor));
+        if(!this.collaboration.fromSetValue) {
+          var cursor = this.editor.getSession().getSelection().getCursor();
+          console.log('Curson change request ' + JSON.stringify(cursor));
+          this.collaboration.cursorMove(JSON.stringify(cursor)); 
+      }
     }.bind(this));
 
 //    this.collaboration.restoreBuffer();
@@ -125,24 +127,22 @@ export class EditorComponent implements OnInit {
   }
 
   setPublic() {
-    this.type = this.editor.type ="PUBLIC";
-    this.shareList = this.editor.shareList = [];
+    this.editor.type ="PUBLIC";
+    this.editor.shareList = [];
     console.log("session set to public");
     let data = {
-      'type': this.type,
-      'shareList': this.shareList
+      'type': this.editor.type,
+      'shareList': this.editor.shareList
     }
     this.collaboration.changeType(JSON.stringify(data));
   }
 
   addShare() {
-    this.type = this.editor.type = "SHARE";
+    this.editor.type = "SHARE";
     this.editor.shareList.push(this.newPerson);
-    this.shareList = this.editor.shareList;
-    console.log(this.shareList);
     let data = {
-      'type': this.type,
-      'shareList': this.shareList
+      'type': this.editor.type,
+      'shareList': this.editor.shareList
     }
     this.collaboration.changeType(JSON.stringify(data));
 
@@ -151,6 +151,8 @@ export class EditorComponent implements OnInit {
     this.editor.getSession().setMode("ace/mode/"+ this.modeMap[this.language]);
 //    this.editor.setValue(this.defaultContent[this.language]);
     this.editor.getSession().getDocument().setValue(this.defaultContent[this.language]);
+    this.editor.type = "PRIVATE";
+    this.editor.shareList = [];
   }
 
   submit(): void {
