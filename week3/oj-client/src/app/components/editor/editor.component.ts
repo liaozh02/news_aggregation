@@ -55,18 +55,20 @@ export class EditorComponent implements OnInit {
     this.route.params
       .subscribe(params => {
         this.problemId = params['id'];
-        if(this.auth.authenticated()) {          
+        if(this.auth.authenticated()) {
+          this.userName = this.auth.getCurrentProfile().nickname;          
           let key = this.userName + '/' + this.problemId + '/';
           if(params['session']) {
             this.sessionId = params['session'];
           } else if(localStorage.getItem(key)){
             this.sessionId = localStorage.getItem(key);
+            console.log("Browser sessionId record:" + this.sessionId);
             let state = {
               id: this.problemId,
               name: 'session'
             }
-          window.history.pushState(state, "session", `/problems/${this.problemId}/${this.sessionId}`);
-          this.url = window.location.href;
+            window.history.pushState(state, "session", `/problems/${this.problemId}/${this.sessionId}`);
+            this.url = window.location.href;
           }
           else{
             this.sessionId = "";
@@ -86,7 +88,6 @@ export class EditorComponent implements OnInit {
     if(this.auth.authenticated()) {
       this.editor.userName = this.auth.getCurrentProfile().nickname;
       this.editor.language = this.language;
- //     this.editor.type = this.type;
       this.editor.problemId = this.problemId;
       this.initSocket();
     }

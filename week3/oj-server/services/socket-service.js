@@ -3,7 +3,7 @@ var Document = require('../modules/index.js');
 const uuid = require('uuid/v4');
 
 const TIMEOUT_IN_SECONDS = 36000;
-const SNAPSHOT_INTERVAL_MILLESEC = 600000;
+const SNAPSHOT_INTERVAL_MILLESEC = 60000;
 
 module.exports = function(io) {
 
@@ -48,7 +48,7 @@ module.exports = function(io) {
                     sessionId = data;
                     if (sessionId in socketSessionList) {
                         console.log("Join current session: " + sessionId);
-                        if (validateUser(client, sessionProp[sessionId])) {
+                        if (validateUser(client, sessionPropList[sessionId])) {
                             updateList(sessionId, client, socket.id);
                             socket.emit('create', sessionId);
                         } else {
@@ -56,13 +56,24 @@ module.exports = function(io) {
                             socket.disconnect(true);
                         }
                     } else {
-                        sessionList.push(sessionId);
                         let key = sessionPath + '/' + sessionId;
                         redisClient.llen(key, function(length) {
                             if (length) {
-                                redisRestore(sessionId, client, socket.id, function() {
-                                    socket.emit('create', sessionId);
-                                });
+                                redisRestore(sessionId, client, socket.id).then((data) => {
+                                        socket.emit('create', data);
+                                        sessionList.push(data);
+                                    }) //resolve
+                                    .catch((res) => {
+                                        if (res === "validation") {
+                                            socket.disconnect(true);
+                                        } else if (res === "session") {
+                                            console.log("session data expired, create new record");
+                                            createNewSession(sessionId, client, socketId);
+                                            redisSave(sessionId);
+                                        } else {
+                                            console.log(res);
+                                        }
+                                    }) //reject
                             } else {
                                 console.log('record missed! for sessionId:' + sessionId);
                                 createNewSession(sessionId, client, socket.id);
@@ -78,6 +89,7 @@ module.exports = function(io) {
                     createNewSession(sessionId, client, socket.id);
                     let key = sessionPath + '/' + client + '/' + problemId;
                     redisClient.set(key, sessionId, redisClient.redisPrint);
+                    redisClient.expire(key, TIMEOUT_IN_SECONDS);
                     socket.emit('create', sessionId);
                 }
             });
@@ -93,10 +105,20 @@ module.exports = function(io) {
                     socket.disconnect(true);
                 }
             } else {
-                sessionList.push(sessionId);
-                redisRestore(sessionId, client, socket.id, function() {
-                    socket.emit('create', sessionId);
-                });
+                redisRestore(sessionId, client, socket.id).then(() => {
+                        socket.emit('create', sessionId);
+                        sessionList.push(sessionId);
+                    }) //resolve
+                    .catch((res) => {
+                        if (res === "validation") {
+                            socket.disconnect(true);
+                        } else if (res === "session") {
+                            console.log("session data Not exist");
+                            socket.disconnect(true);
+                        } else {
+                            console.log(res);
+                        }
+                    }) //reject
             }
         }
 
@@ -186,39 +208,39 @@ module.exports = function(io) {
             }
         }
 
-        function redisRestore(sessionId, client, socketId, callback) {
-            console.log('session teminated previously, recover from redis');
-            let key = sessionPath + '/' + sessionId;
-            redisClient.lindex(key, 0, function(data) {
-                if (data) {
-                    console.log('get latest data from redis', data);
-                    data = JSON.parse(data);
-                    //     console.log(data);
-                    if (data['owner'] != client) {
-                        console.log("Alert!!user-session record not match! Begin Vaidation")
-                        if (validateUser(client, data)) {
-                            documentSessionList[sessionId] = new Document(data['snapShot']);
-                            sessionPropList[sessionId] = {
-                                'owner': data['owner'],
-                                'type': data['type'],
-                                'shareList': data['shareList']
+        function redisRestore(sessionId, client, socketId) {
+            return new Promise((resolve, reject) => {
+                console.log('session teminated previously, recover from redis');
+                let key = sessionPath + '/' + sessionId;
+                redisClient.lindex(key, 0, function(data) {
+                    if (data) {
+                        console.log('get latest data from redis', data);
+                        data = JSON.parse(data);
+                        if (data['owner'] != client) {
+                            console.log("Alert!!user-session record not match! Begin Vaidation")
+                            if (!validateUser(client, data)) {
+                                reject("validation");
                             }
-                            socketSessionList[sessionId] = {
-                                    'cachedChangeEvents': [],
-                                    'participants': [],
-                                } //list
-                            updateList(sessionId, client, socket.id)
-                            callback();
                         } else {
-                            socket.disconnect(true);
+                            console.log(client + " reconnect");
                         }
+                        documentSessionList[sessionId] = new Document(data['snapShot']);
+                        sessionPropList[sessionId] = {
+                            'owner': data['owner'],
+                            'type': data['type'],
+                            'shareList': data['shareList']
+                        }
+                        socketSessionList[sessionId] = {
+                                'cachedChangeEvents': [],
+                                'participants': [],
+                            } //list
+                        updateList(sessionId, client, socketId);
+                        resolve(sessionId);
+                    } else {
+                        console.log("data expired Or not exist");
+                        reject("session");
                     }
-                } else {
-                    console.log("data expired");
-                    createNewSession(sessionId, client, socketId);
-                    redisSave(sessionId);
-                    callback();
-                }
+                });
             });
         }
 
@@ -237,8 +259,6 @@ module.exports = function(io) {
             }
             updateList(sessionId, client, socketId);
         }
-
-
 
         function validateUser(client, sessionProp) {
             if (sessionProp['owner'] != client) {
