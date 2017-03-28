@@ -68,7 +68,7 @@ export class EditorComponent implements OnInit {
               name: 'session'
             }
             window.history.pushState(state, "session", `/problems/${this.problemId}/${this.sessionId}`);
-            this.url = window.location.href;
+            this.editor.url = window.location.href;
           }
           else{
             this.sessionId = "";
