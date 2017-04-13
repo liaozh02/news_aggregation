@@ -1,0 +1,11 @@
+.logform {
+    width: 30% !important;
+}
+
+.tabs .indicator {
+    display: none;
+}
+
+.tabs .tab a.active { 
+    border-bottom: 2px solid #64b5f6; 
+}

@@ -1,0 +1,4 @@
+{
+    "mongoDbUri": "mongodb://localhost/userinfo",
+    "jwtSecret": "Alice's week7 work"
+}
