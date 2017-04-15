@@ -1,5 +1,6 @@
 import json
 import pika
+import traceback
 
 class CloudAMQPClient:
     def __init__(self, cloud_amqp_url, queue_name):
@@ -24,7 +25,7 @@ class CloudAMQPClient:
             self.channel.basic_ack(method_frame.delivery_tag)
             return json.loads(body)
         else:
-            print "No message returned"
+            print "%s No message returned" % traceback.extract_stack()[0][0]
             return None
 
     def sleep(self, second):
