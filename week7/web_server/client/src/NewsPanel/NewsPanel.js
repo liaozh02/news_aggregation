@@ -25,6 +25,10 @@ class NewsPanel extends React.Component{
         }
    }
 
+   componentWillUnmount() {
+       window.removeEventListener('scroll', this.handleScroll);
+   }
+
     loadMoreNews(e) {
         let request = new Request('http://localhost:3000/news', {
             method: 'GET',
@@ -46,7 +50,7 @@ class NewsPanel extends React.Component{
         var news_list = this.state.news.map(function(news) {
             return(
         //        <a className="list-group-item" key={news.digest} href="#">
-                  <a className="list-group-item" ref="#">
+                  <a className="list-group-item" href="#">
                     <NewsCard news={news}/>
                 </a>
             );

@@ -10,7 +10,7 @@ module.exports.connect = (uri) => {
         console.log('connected to mongodb server');
     })
     db.on('disconnected', function() {
-        mongoose.connect(mongoUrl);
+        mongoose.connect(uri);
         db = mongoose.connection;
     })
 

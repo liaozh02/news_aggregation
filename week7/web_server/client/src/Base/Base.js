@@ -2,9 +2,17 @@ import React from 'react';
 import Header from "../Header/Header";
 import LoginPage from "../Login/LoginPage";
 import SignupPage from "../Signup/SignupPage";
+//import { Link } from "react-router";
 import "./Base.css";
 
 class Base extends React.Component {
+  componentDidMount() {
+    console.log("BAse did mount");
+    window.$(document).ready(function(){
+      window.$('ul.tabs').tabs();
+    });
+  }
+
 
   render() {
     return(
