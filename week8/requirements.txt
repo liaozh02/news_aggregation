@@ -2,7 +2,6 @@ datautil
 lxml
 newspaper
 numpy
-pickle
 pika
 python-jsonrpc
 pymongo

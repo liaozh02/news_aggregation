@@ -10,7 +10,22 @@ router.get('/userId/:userId/pageNum/:pageNum', function(req, res, next) {
     rpc_client.getNewssummaryForuser(user_id, page_num, function(response){
         res.json(response);
     })
+});
 
+/*router.post('/userId/:userId/newsId/:newsId', function(req, res, next) {
+    user_id = req.params.userId;
+    news_id = req.params.newsId;
+    console.log("Logging news click: userId: " + user_id + " newsId: " + news_id);
+    rpc_client.logNewsclickForuser(user_id, news_id);
+    res.status(200);
+}); */
+
+router.post('/userId/:userId/log', function(req, res, next) {
+    user_id = req.params.userId;
+    news_id = req.query.newsId;
+    console.log("Logging news click: userId: " + user_id + " newsId: " + news_id);
+    rpc_client.logNewsclickForuser(user_id, news_id);
+    res.status(200)
 });
 
 module.exports = router;

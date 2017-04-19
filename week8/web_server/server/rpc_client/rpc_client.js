@@ -23,7 +23,13 @@ function getNewssummaryForuser(userId, pageNum, callback) {
     });
 }
 
+function logNewsclickForuser(userId, newsId) {
+    client.request('logNewsclickForuser', [userId, newsId], function(err, response) {
+        if (err) throw err;
+    });
+}
 module.exports = {
     add: add,
-    getNewssummaryForuser:getNewssummaryForuser
+    getNewssummaryForuser: getNewssummaryForuser,
+    logNewsclickForuser: logNewsclickForuser
 }

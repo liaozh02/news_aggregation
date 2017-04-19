@@ -3,13 +3,14 @@ import os
 import sys
 import redis
 import pickle
-import datetime
+from datetime import datetime
 from bson.json_util import dumps
 
 # import common package in parent directory
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'common'))
 
 import mongodb_client
+from cloudAMQP_client import CloudAMQPClient
 
 
 MONGODB_SERVER_HOST = 'localhost'
@@ -21,8 +22,13 @@ REDIS_NEWS_EXPIRE_IN_SECONDS = 600
 NEWS_LIMIT = 100
 NEWS_PER_PAGE_SIZE = 10
 NEWS_DB_COLLECTION = 'news'
+CLICKS_DB_COLLECTION = 'clicks'
+
+LOG_CLICKS_TASK_QUEUE_URL = "amqp://kqtmbtso:4ilOUR7nFjfN_hJ11IIJMDJqLZVfx5sE@donkey.rmq.cloudamqp.com/kqtmbtso"
+LOG_CLICKS_TASK_QUEUE_NAME = 'tap-news-log-clicks-task-queue'
 
 redis_client = redis.StrictRedis(REDIS_SERVER_HOST, REDIS_SERVER_PORT)
+CloudAMQPClient = CloudAMQPClient(LOG_CLICKS_TASK_QUEUE_URL, LOG_CLICKS_TASK_QUEUE_NAME)
 
 def getNewssummaryForuser(userId, pageNum):
     print "get news for user: %s @ page %s" % (userId, pageNum)
@@ -49,6 +55,17 @@ def getNewssummaryForuser(userId, pageNum):
     
     for news in sliced_news:
         del news['text']
-        if news['publishedAt'].date() == datetime.date.today():
+        if news['publishedAt'].date() == datetime.today().date():
             news['time'] = 'Today'
     return json.loads(dumps(sliced_news))
+
+
+def logNewsclickForuser(userId, newsId):
+    message = {'userId': userId, 'newsId': newsId, 'timestamp': datetime.utcnow()}
+    db = mongodb_client.get_db()
+    #save original record
+    db[CLICKS_DB_COLLECTION].insert(message)
+
+    message = {'userId': userId, 'newsId': newsId, 'timestamp': str(datetime.utcnow())}
+    CloudAMQPClient.sendMessage(message)
+    

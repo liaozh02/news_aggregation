@@ -18,7 +18,7 @@ DEDUPE_NEWS_TASK_QUEUE_NAME = "tap-news-dedupe-news-task-queue"
 
 SLEEP_TIME_IN_SECONDS = 1
 
-NEWS_TABLE_NAME = "news"
+NEWS_DB_COLLECTION = "news"
 
 SAME_NEWS_SIMILARITY_THRESHOLD = 0.8
 
@@ -40,7 +40,7 @@ def handle_messages(msg):
     published_at_day_end = published_at_day_begin + datetime.timedelta(days=1)
 
     db = mongodb_client.get_db()
-    recent_news_list = list(db[NEWS_TABLE_NAME].find({'publishedAt':{'$gte':published_at_day_begin, '$lt': published_at_day_end}}))
+    recent_news_list = list(db[NEWS_DB_COLLECTION].find({'publishedAt':{'$gte':published_at_day_begin, '$lt': published_at_day_end}}))
 
     if recent_news_list is not None and len(recent_news_list) > 0:
         documents = [str(news['text'].encode('utf-8')) for news in recent_news_list]
@@ -58,7 +58,7 @@ def handle_messages(msg):
                 print "Duplicated news. Ignore."
                 return
     task['publishedAt'] = parser.parse(task['publishedAt'])
-    db[NEWS_TABLE_NAME].replace_one({'digest': task['digest']}, task, upsert=True)
+    db[NEWS_DB_COLLECTION].replace_one({'digest': task['digest']}, task, upsert=True)
 
 while True:
     if cloudAMQP_client is not None:
