@@ -12,6 +12,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'common'))
 
 import mongodb_client
 from cloudAMQP_client import CloudAMQPClient
+import news_topic_modeling_service_client
 
 DEDUPE_NEWS_TASK_QUEUE_URL = "amqp://vxtrpsbc:R-25yfn8yeoXrWNZavBgTdMY9ZPhohXJ@donkey.rmq.cloudamqp.com/vxtrpsbc"
 DEDUPE_NEWS_TASK_QUEUE_NAME = "tap-news-dedupe-news-task-queue"
@@ -58,6 +59,11 @@ def handle_messages(msg):
                 print "Duplicated news. Ignore."
                 return
     task['publishedAt'] = parser.parse(task['publishedAt'])
+
+    title = task['title']
+    if title is not None:
+        topic = news_topic_modeling_service_client.classify(title)
+        task['class'] = topic
     db[NEWS_DB_COLLECTION].replace_one({'digest': task['digest']}, task, upsert=True)
 
 while True:

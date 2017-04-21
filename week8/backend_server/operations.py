@@ -11,7 +11,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'common'))
 
 import mongodb_client
 from cloudAMQP_client import CloudAMQPClient
-
+import news_recommendation_service_client
 
 MONGODB_SERVER_HOST = 'localhost'
 MONGODB_SERVER_PORT = 4040
@@ -52,9 +52,18 @@ def getNewssummaryForuser(userId, pageNum):
         redis_client.expire(userId, REDIS_NEWS_EXPIRE_IN_SECONDS)
 
         sliced_news = total_news[startIndex: endIndex]
+
+    #get preference for user
+    preference = news_recommendation_service_client.getPreferenceForuser(userId)
+    topPreference = None
+
+    if preference is not None and len(preference) > 0:
+        topPreference = preference[0]
     
     for news in sliced_news:
         del news['text']
+        if news['class'] == topPreference:
+            news['reason'] = 'Recommend'
         if news['publishedAt'].date() == datetime.today().date():
             news['time'] = 'Today'
     return json.loads(dumps(sliced_news))

@@ -1,0 +1,5 @@
+#compiled by python
+*.pyc
+
+#train temp file
+news_topic_modeling_service/model/
