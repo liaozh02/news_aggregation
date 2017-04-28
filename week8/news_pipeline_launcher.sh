@@ -2,6 +2,7 @@
 #!/bin/bash
 service redis_6379 start
 service mongod start
+service rabbitmq-server start
 
 pip install -r requirements.txt
 

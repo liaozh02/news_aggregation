@@ -2,16 +2,19 @@ import operations
 from sets import Set
 import sys
 import os
+import json
 # import common package in parent directory
-sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'common'))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'common')))
+CONFIG_FILE = os.path.join(os.path.dirname(__file__), '..', 'config', 'config.json')
 
 import mongodb_client
 from cloudAMQP_client import CloudAMQPClient
 
-CLICKS_DB_COLLECTION = 'clicks'
-
-LOG_CLICKS_TASK_QUEUE_URL = "amqp://kqtmbtso:4ilOUR7nFjfN_hJ11IIJMDJqLZVfx5sE@donkey.rmq.cloudamqp.com/kqtmbtso"
-LOG_CLICKS_TASK_QUEUE_NAME = 'tap-news-log-clicks-task-queue'
+with open(CONFIG_FILE, 'r') as f:
+    data = json.load(f)
+    CLICKS_DB_COLLECTION = data['mongoDb']['clicksMongoDbCollection']
+    LOG_CLICKS_TASK_QUEUE_URL = data['queue']['logClicksTaskQueueUrl']
+    LOG_CLICKS_TASK_QUEUE_NAME = data['queue']['logClicksTaskQueueName']
 
 CloudAMQPClient = CloudAMQPClient(LOG_CLICKS_TASK_QUEUE_URL, LOG_CLICKS_TASK_QUEUE_NAME)
 

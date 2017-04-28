@@ -1,5 +1,7 @@
 const mongoose = require("mongoose");
 const bcrypt = require('bcrypt');
+const dbName = require('../../../config/config.json').mongoDb.userInfoCollection;
+;
 
 const UserSchema = new mongoose.Schema({
     email:{
@@ -30,4 +32,4 @@ UserSchema.pre('save', function(next) {
     });
 })
 
-module.exorts = mongoose.model("UserInfo", UserSchema);
+module.exorts = mongoose.model(dbName, UserSchema);

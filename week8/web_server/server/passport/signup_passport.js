@@ -1,7 +1,8 @@
-const User = require('mongoose').model('UserInfo');
+const dbName = require('../../../config/config.json').mongoDb.userInfoCollection;
+const User = require('mongoose').model(dbName);
 const passportLocalStrategy = require('passport-local').Strategy;
 const jwt = require('jsonwebtoken');
-const jwtSecret = require('../config/config.json').jwtSecret;
+const jwtSecret = require('../../../config/config.json').jwtSecret;
 
 module.exports = new passportLocalStrategy({
     usernameField: 'email',

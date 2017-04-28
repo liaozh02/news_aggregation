@@ -1,4 +1,5 @@
 import news_classes
+import json
 import sys
 import os
 # import common package in parent directory
@@ -7,17 +8,17 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'common'))
 import mongodb_client
 from cloudAMQP_client import CloudAMQPClient
 
-NUM_OF_CLASSES = 17
-INITIAL_P = 1.0 /NUM_OF_CLASSES
-ALPHA = 0.1
+with open('../config/config.json', 'r') as f:
+    data = json.load(f)
+    LOG_CLICKS_TASK_QUEUE_URL = data['queue']['logClicksTaskQueueUrl']
+    LOG_CLICKS_TASK_QUEUE_NAME = data['queue']['logClicksTaskQueueName']
+    SLEEP_TIME_IN_SECONDS = int(data['queue']['logClicksTaskSleepTime'])
+    NEWS_DB_COLLECTION = data['mongoDb']['newsMongoDbCollection']
+    PREFER_DB_COLLECTION = data['mongoDb']['preferMongoDbCollection']
+    NUM_OF_CLASSES = int(data['classification']['classNums'])
+    INITIAL_P = 1.0 /NUM_OF_CLASSES
+    ALPHA = float(data['clicksModel']['alpha'])
 
-PREFER_DB_COLLECTION = 'preference_model'
-NEWS_DB_COLLECTION = "news"
-
-LOG_CLICKS_TASK_QUEUE_URL = "amqp://kqtmbtso:4ilOUR7nFjfN_hJ11IIJMDJqLZVfx5sE@donkey.rmq.cloudamqp.com/kqtmbtso"
-LOG_CLICKS_TASK_QUEUE_NAME = 'tap-news-log-clicks-task-queue'
-
-SLEEP_TIME_IN_SECONDS = 1
 logclick_client = CloudAMQPClient(LOG_CLICKS_TASK_QUEUE_URL, LOG_CLICKS_TASK_QUEUE_NAME)
 
 

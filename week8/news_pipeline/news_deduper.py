@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import datetime
+import json
 import os
 import sys
 
@@ -9,19 +10,19 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 
 # import common package in parent directory
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'common'))
+CONFIG_FILE = os.path.join(os.path.dirname(__file__), '..', 'config', 'config.json')
 
 import mongodb_client
 from cloudAMQP_client import CloudAMQPClient
 import news_topic_modeling_service_client
 
-DEDUPE_NEWS_TASK_QUEUE_URL = "amqp://vxtrpsbc:R-25yfn8yeoXrWNZavBgTdMY9ZPhohXJ@donkey.rmq.cloudamqp.com/vxtrpsbc"
-DEDUPE_NEWS_TASK_QUEUE_NAME = "tap-news-dedupe-news-task-queue"
-
-SLEEP_TIME_IN_SECONDS = 1
-
-NEWS_DB_COLLECTION = "news"
-
-SAME_NEWS_SIMILARITY_THRESHOLD = 0.8
+with open(CONFIG_FILE, 'r') as f:
+    data = json.load(f)
+    DEDUPE_NEWS_TASK_QUEUE_URL = data['queue']['dedupeNewsTaskQueueUrl']
+    DEDUPE_NEWS_TASK_QUEUE_NAME = data['queue']['dedupeNewsTaskQueueName']
+    SLEEP_TIME_IN_SECONDS = int(data['queue']['dedupeNewsTaskSleepTime'])
+    NEWS_DB_COLLECTION = data['mongoDb']['newsMongoDbCollection']
+    SAME_NEWS_SIMILARITY_THRESHOLD = float(data['newsDedupe']['sameNewsThreshold'])
 
 cloudAMQP_client = CloudAMQPClient(DEDUPE_NEWS_TASK_QUEUE_URL, DEDUPE_NEWS_TASK_QUEUE_NAME)
 
@@ -64,6 +65,7 @@ def handle_messages(msg):
     if title is not None:
         topic = news_topic_modeling_service_client.classify(title)
         task['class'] = topic
+    print "add one news"
     db[NEWS_DB_COLLECTION].replace_one({'digest': task['digest']}, task, upsert=True)
 
 while True:

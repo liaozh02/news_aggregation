@@ -15,17 +15,21 @@ from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'trainer'))
+CONFIG_FILE = os.path.join(os.path.dirname(__file__), '../..', 'config', 'config.json')
+
 import news_cnn_model
-N_CLASSES = 17
-MODEL_UPDATE_LAG_IN_SECONDS = 10
 
-SERVER_HOST = 'localhost'
-SERVER_PORT = 6060
+with open(CONFIG_FILE, 'r') as f:
+    data = json.load(f)
+    SERVER_HOST = data['server']['modelServerHost']
+    SERVER_PORT = int(data['server']['modelServerPort'])
+    N_CLASSES = int(data['classification']['classNums'])
+    MODEL_UPDATE_LAG_IN_SECONDS = int(data['classification']['modelUpdateLagInSeconds'])
 
-VARS_FILE = "../model/vars"
-VOCAB_PROCESSOR_SAVE_FILE = '../model/vocab_procesor_save_file'
-MODEL_DIR = '../model'
-
+VARS_FILE = os.path.join(os.path.dirname(__file__), "../model/vars")
+VOCAB_PROCESSOR_SAVE_FILE = os.path.join(os.path.dirname(__file__), '../model/vocab_procesor_save_file')
+MODEL_DIR = os.path.join(os.path.dirname(__file__), '../model')
+CSV_FILE = os.path.join(os.path.dirname(__file__), '../trainer/tap-news-test.csv')
 def restoreVars():
     with open(VARS_FILE, 'r') as f:
         global n_words
@@ -42,7 +46,7 @@ def loadModel():
         model_fn=news_cnn_model.generate_cnn_model(N_CLASSES, n_words),
         model_dir=MODEL_DIR
     )
-    df = pd.read_csv('../trainer/tap-news-test.csv', header=None)
+    df = pd.read_csv(CSV_FILE, header=None)
 
     train_df = df[0:1]
     x_train = train_df[1]

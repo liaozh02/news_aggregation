@@ -1,21 +1,24 @@
 # -*- coding:utf-8 -*-
-
+import json
 import os
 import sys
 
 # import common package in parent directory
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'common'))
 sys.path.append(os.path.join(os.path.dirname(__file__), 'scrapers'))
+CONFIG_FILE = os.path.join(os.path.dirname(__file__), '..', 'config', 'config.json')
 
 from newspaper import Article
 import cnn_news_scraper
 from cloudAMQP_client import CloudAMQPClient
 
-
-SCRAPE_NEWS_TASK_QUEUE_URL = "amqp://pwutupuw:X_8f-1LO72Y5bBGSmCQGv48ne3rxPR8f@donkey.rmq.cloudamqp.com/pwutupuw"
-SCRAPE_NEWS_TASK_QUEUE_NAME = "tap-news-scrape-news-task-queue"
-DEDUPE_NEWS_TASK_QUEUE_URL = "amqp://vxtrpsbc:R-25yfn8yeoXrWNZavBgTdMY9ZPhohXJ@donkey.rmq.cloudamqp.com/vxtrpsbc"
-DEDUPE_NEWS_TASK_QUEUE_NAME = "tap-news-dedupe-news-task-queue"
+with open(CONFIG_FILE, 'r') as f:
+    data = json.load(f)
+    DEDUPE_NEWS_TASK_QUEUE_URL = data['queue']['dedupeNewsTaskQueueUrl']
+    DEDUPE_NEWS_TASK_QUEUE_NAME = data['queue']['dedupeNewsTaskQueueName']
+    SCRAPE_NEWS_TASK_QUEUE_URL = data['queue']['scrapeNewsTaskQueueUrl']
+    SCRAPE_NEWS_TASK_QUEUE_NAME = data['queue']['scrapeNewsTaskQueueName']
+    SLEEP_TIME_IN_SECONDS = int(data['queue']['fetchNewsTaskSleepTime'])
 
 dedupe_news_queue_client = CloudAMQPClient(DEDUPE_NEWS_TASK_QUEUE_URL, DEDUPE_NEWS_TASK_QUEUE_NAME)
 scrape_news_queue_client = CloudAMQPClient(SCRAPE_NEWS_TASK_QUEUE_URL, SCRAPE_NEWS_TASK_QUEUE_NAME)
@@ -48,3 +51,5 @@ while True:
             except Exception as e:
                 print e
                 pass
+        
+        scrape_news_queue_client.sleep(SLEEP_TIME_IN_SECONDS)

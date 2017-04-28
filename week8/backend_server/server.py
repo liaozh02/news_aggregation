@@ -7,9 +7,12 @@ import operations
 
 # import common package in parent directory
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'common'))
+CONFIG_FILE = os.path.join(os.path.dirname(__file__), '..', 'config', 'config.json')
 
-SERVER_HOST = 'localhost'
-SERVER_PORT = 4040
+with open(CONFIG_FILE, 'r') as f:
+    data = json.load(f)
+    SERVER_HOST = data['server']['backendServerHost']
+    SERVER_PORT = int(data['server']['backendServerPort'])
 
 class RequestHandler(pyjsonrpc.HttpRequestHandler):
     """ Test method """

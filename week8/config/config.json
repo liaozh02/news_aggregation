@@ -1,0 +1,61 @@
+{
+    "mongoDb": {
+        "userInfoMongoDbUri": "mongodb://localhost/userinfo",
+        "userInfoCollection": "UserInfo",
+        "newsMongoDbHost":  "localhost",
+        "newsMongoDbPort": "27017",
+        "newsMongoDbName": "tap-news-test",
+        "newsMongoDbCollection": "news",
+        "clicksMongoDbCollection": "clicks",
+        "preferMongoDbCollection": "preference_model"
+    },   
+
+    "redis": {
+        "redisServerHost": "localhost",
+        "redisServerPort": "6379",
+        "newsExpireInSeconds": "600",
+        "newsMonitorExpireInSeconds": "86400"
+    },
+
+    "queue": {
+        "logClicksTaskQueueUrl": "amqp://guest:guest@localhost:5672/%2F",
+        "logClicksTaskQueueName": "tap-news-log-clicks-task-queue",
+        "logClicksTaskSleepTime": "5",
+        "dedupeNewsTaskQueueUrl": "amqp://guest:guest@localhost:5672/%2F",
+        "dedupeNewsTaskQueueName": "tap-news-dedupe-news-task-queue",
+        "dedupeNewsTaskSleepTime": "2",
+        "scrapeNewsTaskQueueUrl": "amqp://guest:guest@localhost:5672/%2F",
+        "scrapeNewsTaskQueueName": "tap-news-scrape-news-task-queue",
+        "scrapeNewsTaskSleepTime": "10",
+        "fetchNewsTaskSleepTime": "2"
+    },
+
+    "server": {
+        "backendServerHost": "localhost",
+        "backendServerPort": "4040",
+        "recommendationServerHost": "localhost",
+        "recommendationServerPort": "5050",
+        "modelServerHost": "localhost",
+        "modelServerPort": "6060"
+    },
+
+    "news": {
+        "newsLimit": "100",
+        "newsPageSize": "10"
+    },
+
+    "newsDedupe": {
+        "sameNewsThreshold": "0.8"
+    },
+
+    "clicksModel": {
+        "alpha": "0.1"
+    },
+
+    "classification": {
+        "classNums": "17",
+        "modelUpdateLagInSeconds": "10"
+    },
+
+    "jwtSecret": "Alice's week7 work"
+}

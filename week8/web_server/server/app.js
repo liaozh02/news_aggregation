@@ -11,8 +11,8 @@ var news = require('./routes/news');
 var auth = require('./routes/auth');
 var app = express();
 
-var config = require('./config/config.json');
-require('./models/main.js').connect(config.mongoDbUri)
+var config = require('../../config/config.json');
+require('./models/main.js').connect(config.mongoDb.userInfoMongoDbUri)
 
 // view engine setup
 app.set('views', path.join(__dirname, '../client/build/'));

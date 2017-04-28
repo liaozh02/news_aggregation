@@ -8,24 +8,23 @@ from bson.json_util import dumps
 
 # import common package in parent directory
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'common'))
+CONFIG_FILE = os.path.join(os.path.dirname(__file__), '..', 'config', 'config.json')
 
 import mongodb_client
 from cloudAMQP_client import CloudAMQPClient
 import news_recommendation_service_client
 
-MONGODB_SERVER_HOST = 'localhost'
-MONGODB_SERVER_PORT = 4040
-REDIS_SERVER_HOST = 'localhost'
-REDIS_SERVER_PORT = 6379
-REDIS_NEWS_EXPIRE_IN_SECONDS = 600
-
-NEWS_LIMIT = 100
-NEWS_PER_PAGE_SIZE = 10
-NEWS_DB_COLLECTION = 'news'
-CLICKS_DB_COLLECTION = 'clicks'
-
-LOG_CLICKS_TASK_QUEUE_URL = "amqp://kqtmbtso:4ilOUR7nFjfN_hJ11IIJMDJqLZVfx5sE@donkey.rmq.cloudamqp.com/kqtmbtso"
-LOG_CLICKS_TASK_QUEUE_NAME = 'tap-news-log-clicks-task-queue'
+with open(CONFIG_FILE, 'r') as f:
+    data = json.load(f)
+    REDIS_SERVER_HOST = data['redis']['redisServerHost']
+    REDIS_SERVER_PORT = int(data['redis']['redisServerPort'])
+    REDIS_NEWS_EXPIRE_IN_SECONDS = int(data['redis']['newsExpireInSeconds'])
+    NEWS_LIMIT = int(data['news']['newsLimit'])
+    NEWS_PER_PAGE_SIZE = int(data['news']['newsPageSize'])
+    NEWS_DB_COLLECTION = data['mongoDb']['newsMongoDbCollection']
+    CLICKS_DB_COLLECTION = data['mongoDb']['clicksMongoDbCollection']
+    LOG_CLICKS_TASK_QUEUE_URL = data['queue']['logClicksTaskQueueUrl']
+    LOG_CLICKS_TASK_QUEUE_NAME = data['queue']['logClicksTaskQueueName']
 
 redis_client = redis.StrictRedis(REDIS_SERVER_HOST, REDIS_SERVER_PORT)
 CloudAMQPClient = CloudAMQPClient(LOG_CLICKS_TASK_QUEUE_URL, LOG_CLICKS_TASK_QUEUE_NAME)

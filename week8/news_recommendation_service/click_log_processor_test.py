@@ -1,16 +1,19 @@
 import news_classes
+import json
 import sys
 import os
 from datetime import datetime 
 import click_log_processor
 # import common package in parent directory
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'common'))
+CONFIG_FILE = os.path.join(os.path.dirname(__file__), '..', 'config', 'config.json')
 
 import mongodb_client
-PREFER_DB_COLLECTION = 'preference_model'
-NEWS_DB_COLLECTION = 'news'
-NUM_OF_CLASSES = 17
-INITIAL_P = 1.0 /NUM_OF_CLASSES
+
+with open(CONFIG_FILE, 'r') as f:
+    data = json.load(f)
+    PREFER_DB_COLLECTION = data['mongoDb']['preferMongoDbCollection']
+    NUM_OF_CLASSES = int(data['classification']['classNums'])
 
 def pre_process():
     db = mongodb_client.get_db()

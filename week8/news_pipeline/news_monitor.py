@@ -1,20 +1,26 @@
 #-*- coding: utf-8 -*-
 import datetime
+import json
 import os
 import redis
 import sys
 import hashlib
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'common'))
+CONFIG_FILE = os.path.join(os.path.dirname(__file__), '..', 'config', 'config.json')
 
 import news_api_client
 from cloudAMQP_client import CloudAMQPClient
 
-REDIS_HOST = 'localhost'
-REDIS_PORT = 6379
 
-SCRAPE_NEWS_TASK_QUEUE_URL = "amqp://pwutupuw:X_8f-1LO72Y5bBGSmCQGv48ne3rxPR8f@donkey.rmq.cloudamqp.com/pwutupuw"
-SCRAPE_NEWS_TASK_QUEUE_NAME = "tap-news-scrape-news-task-queue"
+with open(CONFIG_FILE, 'r') as f:
+    data = json.load(f)
+    SCRAPE_NEWS_TASK_QUEUE_URL = data['queue']['scrapeNewsTaskQueueUrl']
+    SCRAPE_NEWS_TASK_QUEUE_NAME = data['queue']['scrapeNewsTaskQueueName']
+    SLEEP_TIME_IN_SECONDS = int(data['queue']['scrapeNewsTaskSleepTime'])
+    REDIS_SERVER_HOST = data['redis']['redisServerHost']
+    REDIS_SERVER_PORT = int(data['redis']['redisServerPort'])
+    NEWS_TIMEOUT_REDIS_IN_SECONDS = int(data['redis']['newsMonitorExpireInSeconds'])
 
 NEWS_SOURCES = [
     'bbc-news',
@@ -29,16 +35,15 @@ NEWS_SOURCES = [
     'the-wall-street-journal',
     'the-washington-post'
 ]
-NEWS_TIMEOUT_REDIS_IN_SECONDS = 3600*24
-SLEEP_TIME_IN_SECONDS = 10
 
-redis_client =  redis.StrictRedis(REDIS_HOST, REDIS_PORT)
+redis_client =  redis.StrictRedis(REDIS_SERVER_HOST, REDIS_SERVER_PORT)
 cloudAMQP_client = CloudAMQPClient(SCRAPE_NEWS_TASK_QUEUE_URL, SCRAPE_NEWS_TASK_QUEUE_NAME)
 
 while True:
     news_list = news_api_client.getNewsFromSource(NEWS_SOURCES)
 
     num_of_new_news = 0
+    num_of_old_news = 0
 
     for news in news_list:
         news_digest = hashlib.md5(news['title'].encode('utf-8')).digest().encode('base-64')
@@ -54,7 +59,10 @@ while True:
             redis_client.expire(news_digest, NEWS_TIMEOUT_REDIS_IN_SECONDS)
 
             cloudAMQP_client.sendMessage(news)
+        else:
+            num_of_old_news = num_of_old_news + 1
 
     print "Fetched %d new news." % num_of_new_news
+    print "%d old news." % num_of_old_news
 
     cloudAMQP_client.sleep(SLEEP_TIME_IN_SECONDS)

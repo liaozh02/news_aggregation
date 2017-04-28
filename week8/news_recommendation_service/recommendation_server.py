@@ -7,12 +7,16 @@ import operator
 
 # import common package in parent directory
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'common'))
+CONFIG_FILE = os.path.join(os.path.dirname(__file__), '..', 'config', 'config.json')
 
 import mongodb_client
-PREFER_DB_COLLECTION = 'preference_model'
 
-SERVER_HOST = 'localhost'
-SERVER_PORT = 5050
+
+with open(CONFIG_FILE, 'r') as f:
+    data = json.load(f)
+    SERVER_HOST = data['server']['recommendationServerHost']
+    SERVER_PORT = int(data['server']['recommendationServerPort'])
+    PREFER_DB_COLLECTION = data['mongoDb']['preferMongoDbCollection']
 
 # Ref: http://stackoverflow.com/questions/5595425/what-is-the-best-way-to-compare-floats-for-almost-equality-in-python
 def isclose(a, b, rel_tol=1e-09, abs_tol=0.0):
