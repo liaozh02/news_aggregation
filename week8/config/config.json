@@ -1,4 +1,10 @@
 {
+    "scheduler": {
+        "newspipeline": {
+            "minutes": "30"
+        }
+    },
+
     "mongoDb": {
         "userInfoMongoDbUri": "mongodb://localhost/userinfo",
         "userInfoCollection": "UserInfo",
@@ -36,12 +42,38 @@
         "recommendationServerHost": "localhost",
         "recommendationServerPort": "5050",
         "modelServerHost": "localhost",
-        "modelServerPort": "6060"
+        "modelServerPort": "6060",
+        "schedulerServiceHost": "localhost",
+        "schedulerServicePort": "7070"
+    },
+
+    "newsApi": {
+        "ep": "https://newsapi.org/v1/",
+        "key": "9fa0903f83e94eefbb0f570464f3805a",
+        "sourceDefault": ["cnn"],
+        "sortDefault": "top",
+        "apiDefault": "articles",
+        "source": ["bbc-news",
+            "bbc-sport",
+            "bloomberg",
+            "cnn",
+            "entertainment-weekly",
+            "espn",
+            "ign",
+            "techcrunch",
+            "the-new-york-times",
+            "the-wall-street-journal",
+            "the-washington-post"],
+        "sort": {
+            "byTop": "top",
+            "byLatest": "latest",
+            "byPopular": "popular"
+        }
     },
 
     "news": {
         "newsLimit": "100",
-        "newsPageSize": "10"
+        "newsPageSize": "10"        
     },
 
     "newsDedupe": {
@@ -57,5 +89,13 @@
         "modelUpdateLagInSeconds": "10"
     },
 
-    "jwtSecret": "Alice's week7 work"
+    "jwtSecret": "Alice's week7 work",
+
+    "pm2": {
+        "serverMonit": {
+            "drive": "/",
+            "interval": "1"
+        }
+    }
+    
 }

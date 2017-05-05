@@ -1,0 +1,28 @@
+{
+  "apps" : [  
+  {
+    "name"        : "webServer",
+    "script"      : "./web_server/server/bin/www"
+  },
+
+  {
+    "name"        : "backendServer",
+    "script"      : "./backend_server/server.py"
+  },
+
+  {
+    "name"        : "recommendationServer",
+    "script"      : "./news_recommendation_service/recommendation_server.py"
+  },
+
+  {
+    "name"        : "modelingServer",
+    "script"      : "./news_topic_modeling_service/server/server.py"
+  },
+  
+  {
+    "name"        : "scheduleServer",
+    "script"      : "./apscheduler/scheduler_server.py"
+  },
+  ]
+}

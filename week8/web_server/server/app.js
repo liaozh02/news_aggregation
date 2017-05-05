@@ -29,11 +29,12 @@ passport.use('local-signup', localSignupStrategy);
 passport.use('local-login', localLoginStrategy);
 
 var authchecker = require('./middleware/auth_checker');
-app.use('/news', authchecker);
+
 app.use('/', index);
+app.use('/news', authchecker);
 app.use('/news', news);
 app.use('/auth', auth);
-
+ 
 // error handler
 app.use(function(err, req, res, next) {
   var err = new Error('Not Found');

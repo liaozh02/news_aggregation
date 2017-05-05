@@ -1,10 +1,10 @@
 #-*- coding: utf-8 -*-
 import datetime
+import hashlib
 import json
 import os
 import redis
 import sys
-import hashlib
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'common'))
 CONFIG_FILE = os.path.join(os.path.dirname(__file__), '..', 'config', 'config.json')
@@ -12,57 +12,45 @@ CONFIG_FILE = os.path.join(os.path.dirname(__file__), '..', 'config', 'config.js
 import news_api_client
 from cloudAMQP_client import CloudAMQPClient
 
+class NewsMonitor:
+    def __init__(self):
+        with open(CONFIG_FILE, 'r') as f:
+            data = json.load(f)
+            self.scrape_news_task_queue_url = data['queue']['scrapeNewsTaskQueueUrl']
+            self.scrape_news_task_queue_name = data['queue']['scrapeNewsTaskQueueName']
+            self.redis_server_host = data['redis']['redisServerHost']
+            self.redis_server_port = int(data['redis']['redisServerPort'])
+            self.news_timeout_redis_in_seconds = int(data['redis']['newsMonitorExpireInSeconds'])
+            self.news_sources = list(data['newsApi']['source'])
 
-with open(CONFIG_FILE, 'r') as f:
-    data = json.load(f)
-    SCRAPE_NEWS_TASK_QUEUE_URL = data['queue']['scrapeNewsTaskQueueUrl']
-    SCRAPE_NEWS_TASK_QUEUE_NAME = data['queue']['scrapeNewsTaskQueueName']
-    SLEEP_TIME_IN_SECONDS = int(data['queue']['scrapeNewsTaskSleepTime'])
-    REDIS_SERVER_HOST = data['redis']['redisServerHost']
-    REDIS_SERVER_PORT = int(data['redis']['redisServerPort'])
-    NEWS_TIMEOUT_REDIS_IN_SECONDS = int(data['redis']['newsMonitorExpireInSeconds'])
+    def __call__(self):
+        self.redis_client =  redis.StrictRedis(self.redis_server_host, self.redis_server_port)
+        self.cloudAMQP_client = CloudAMQPClient(self.scrape_news_task_queue_url, self.scrape_news_task_queue_name)
+        news_list = news_api_client.getNewsFromSource(self.news_sources)
+        print "call news monitor"
+        num_of_new_news = 0
+        num_of_old_news = 0
 
-NEWS_SOURCES = [
-    'bbc-news',
-    'bbc-sport',
-    'bloomberg',
-    'cnn',
-    'entertainment-weekly',
-    'espn',
-    'ign',
-    'techcrunch',
-    'the-new-york-times',
-    'the-wall-street-journal',
-    'the-washington-post'
-]
+        for news in news_list:
+            news_digest = hashlib.md5(news['title'].encode('utf-8')).digest().encode('base-64')
 
-redis_client =  redis.StrictRedis(REDIS_SERVER_HOST, REDIS_SERVER_PORT)
-cloudAMQP_client = CloudAMQPClient(SCRAPE_NEWS_TASK_QUEUE_URL, SCRAPE_NEWS_TASK_QUEUE_NAME)
+            if self.redis_client.get(news_digest) is None:
+                num_of_new_news = num_of_new_news + 1
+                news['digest'] = news_digest
 
-while True:
-    news_list = news_api_client.getNewsFromSource(NEWS_SOURCES)
+                if news['publishedAt'] is None:
+                    news['publishedAt'] = datetime.datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZZ')
 
-    num_of_new_news = 0
-    num_of_old_news = 0
+                self.redis_client.set(news_digest, news)
+                self.redis_client.expire(news_digest, self.news_timeout_redis_in_seconds)
 
-    for news in news_list:
-        news_digest = hashlib.md5(news['title'].encode('utf-8')).digest().encode('base-64')
+                self.cloudAMQP_client.sendMessage(news)
+            else:
+                num_of_old_news = num_of_old_news + 1
 
-        if redis_client.get(news_digest) is None:
-            num_of_new_news = num_of_new_news + 1
-            news['digest'] = news_digest
+        print "Fetched %d new news. %d old news in redis" % (num_of_new_news, num_of_old_news)
+        self.cloudAMQP_client.close()
 
-            if news['publishedAt'] is None:
-                news['publishedAt'] = datetime.datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZZ')
-
-            redis_client.set(news_digest, news)
-            redis_client.expire(news_digest, NEWS_TIMEOUT_REDIS_IN_SECONDS)
-
-            cloudAMQP_client.sendMessage(news)
-        else:
-            num_of_old_news = num_of_old_news + 1
-
-    print "Fetched %d new news." % num_of_new_news
-    print "%d old news." % num_of_old_news
-
-    cloudAMQP_client.sleep(SLEEP_TIME_IN_SECONDS)
+if __name__ == "__main__":
+    news_instance = NewsMonitor()
+    news_instance()

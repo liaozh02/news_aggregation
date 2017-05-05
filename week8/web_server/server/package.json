@@ -19,6 +19,7 @@
     "morgan": "~1.7.0",
     "passport": "^0.3.2",
     "passport-local": "^1.0.0",
+    "pmx": "^1.2.0",
     "serve-favicon": "~2.3.2",
     "validator": "^7.0.0"
   },

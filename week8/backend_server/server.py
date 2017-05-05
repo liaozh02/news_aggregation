@@ -4,11 +4,10 @@ import os
 import sys
 import operations
 
-
 # import common package in parent directory
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'common'))
-CONFIG_FILE = os.path.join(os.path.dirname(__file__), '..', 'config', 'config.json')
 
+CONFIG_FILE = os.path.join(os.path.dirname(__file__), '..', 'config', 'config.json')
 with open(CONFIG_FILE, 'r') as f:
     data = json.load(f)
     SERVER_HOST = data['server']['backendServerHost']
@@ -34,6 +33,6 @@ http_server = pyjsonrpc.ThreadingHttpServer(
     RequestHandlerClass = RequestHandler
 )
 
-print "Starting HTTP server on %s:%d" % (SERVER_HOST, SERVER_PORT)
+print "Starting background http server on %s:%d" % (SERVER_HOST, SERVER_PORT)
 
 http_server.serve_forever()

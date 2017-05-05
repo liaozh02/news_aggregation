@@ -12,44 +12,54 @@ from newspaper import Article
 import cnn_news_scraper
 from cloudAMQP_client import CloudAMQPClient
 
-with open(CONFIG_FILE, 'r') as f:
-    data = json.load(f)
-    DEDUPE_NEWS_TASK_QUEUE_URL = data['queue']['dedupeNewsTaskQueueUrl']
-    DEDUPE_NEWS_TASK_QUEUE_NAME = data['queue']['dedupeNewsTaskQueueName']
-    SCRAPE_NEWS_TASK_QUEUE_URL = data['queue']['scrapeNewsTaskQueueUrl']
-    SCRAPE_NEWS_TASK_QUEUE_NAME = data['queue']['scrapeNewsTaskQueueName']
-    SLEEP_TIME_IN_SECONDS = int(data['queue']['fetchNewsTaskSleepTime'])
+class NewsFetcher():
+    def __init__(self):
+        with open(CONFIG_FILE, 'r') as f:
+            data = json.load(f)
+            self.dedupe_news_task_queue_url = data['queue']['dedupeNewsTaskQueueUrl']
+            self.dedupe_news_task_queue_name = data['queue']['dedupeNewsTaskQueueName']
+            self.scrape_news_task_queue_url = data['queue']['scrapeNewsTaskQueueUrl']
+            self.scrape_news_task_queue_name = data['queue']['scrapeNewsTaskQueueName']
+            self.sleep_time_in_seconds = int(data['queue']['fetchNewsTaskSleepTime'])
 
-dedupe_news_queue_client = CloudAMQPClient(DEDUPE_NEWS_TASK_QUEUE_URL, DEDUPE_NEWS_TASK_QUEUE_NAME)
-scrape_news_queue_client = CloudAMQPClient(SCRAPE_NEWS_TASK_QUEUE_URL, SCRAPE_NEWS_TASK_QUEUE_NAME)
-
-def handle_message(msg):
-    if msg is None or not isinstance(msg, dict):
-        print "message is broken"
-        return
-    
-    task = msg
-
-    article = Article(task['url'])
-    article.download()
-    article.parse()
-
-    print article.text
-
-    task['text'] = article.text;
-    dedupe_news_queue_client.sendMessage(task)
-
-
-while True:
-    #fetch msg from queue
-    if scrape_news_queue_client is not None:
-        msg = scrape_news_queue_client.getMessage()
-        if msg is not None:
-            #handle message
-            try:
-                handle_message(msg)
-            except Exception as e:
-                print e
-                pass
+    def handle_message(self, msg):
+        if msg is None or not isinstance(msg, dict):
+            print "message is broken"
+            return
         
-        scrape_news_queue_client.sleep(SLEEP_TIME_IN_SECONDS)
+        task = msg
+        article = Article(task['url'])
+        article.download()
+        article.parse()
+  #      print article.text
+
+        task['text'] = article.text;
+        self.dedupe_news_queue_client.sendMessage(task)
+
+
+    def __call__(self): 
+        self.dedupe_news_queue_client = CloudAMQPClient(self.dedupe_news_task_queue_url, self.dedupe_news_task_queue_name)
+        self.scrape_news_queue_client = CloudAMQPClient(self.scrape_news_task_queue_url, self.scrape_news_task_queue_name)
+
+    #fetch msg from queue
+        if self.scrape_news_queue_client is not None:
+            while True:
+                msg = self.scrape_news_queue_client.getMessage()
+                if msg is not None:
+                    #handle message
+                    try:
+                        self.handle_message(msg)
+                    except Exception as e:
+                        print e
+                        pass
+                    self.scrape_news_queue_client.sleep(self.sleep_time_in_seconds)
+                else:
+                    self.scrape_news_queue_client.close()
+                    self.dedupe_news_queue_client.close()
+                    break
+
+if __name__ == "__main__":
+    news_instance = NewsFetcher()
+    news_instance()                
+
+                

@@ -1,24 +1,29 @@
+import json
+import os
 import requests
-from json import loads
+import sys
 
-NEWS_API_EP = 'https://newsapi.org/v1/'
-NEWS_API_KEY = '024c3e3221634d55b323c289ce11ecf3'
-ARTICALS_API = 'articles'
-SORT_BY_TOP = 'top'
-CNN = 'cnn'
-DEFAULT_SOURCES = [CNN]
+CONFIG_FILE = os.path.join(os.path.dirname(__file__), '..', 'config', 'config.json')
 
-def buildUrl(end_point=NEWS_API_EP, api_name=ARTICALS_API):
+with open(CONFIG_FILE, 'r') as f:
+    data = json.load(f)
+    NEWS_API_EP = data['newsApi']['ep']
+    NEWS_API_KEY = data['newsApi']['key']
+    DEFAULT_API = data['newsApi']['apiDefault']
+    DEFAULT_SORT = data['newsApi']['sortDefault']
+    DEFAULT_SOURCES = data['newsApi']['sourceDefault']
+
+def buildUrl(end_point=NEWS_API_EP, api_name=DEFAULT_API):
     return end_point + api_name
 
-def getNewsFromSource(sources=DEFAULT_SOURCES, sortBy=SORT_BY_TOP):
+def getNewsFromSource(sources=DEFAULT_SOURCES, sortBy=DEFAULT_SORT):
     articles = []
     for source in sources:
         payload = {'apiKey': NEWS_API_KEY,
                    'source': source,
                    'sortBy': sortBy}
-        response = requests.get(buildUrl(), params=payload)
-        res_json = loads(response.content)
+        response = requests.get(buildUrl(), params=payload, verify=False)
+        res_json = json.loads(response.content)
 
         if (res_json is not None and
             res_json['status'] == 'ok' and

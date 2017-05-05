@@ -1,0 +1,19 @@
+{
+  "name": "pm2-server",
+  "version": "0.0.1",
+  "description": "PM2 Monitor server",
+  "main": "app.js",
+  "dependencies": {
+    "pmx" : "latest"
+  },
+  "config" : {
+    "drive" : "/"
+  },
+  "apps" : [{
+    "merge_logs"         : true,
+    "max_memory_restart" : "150M",
+    "script"             : "app.js"
+  }],
+  "author": "Keymetrics Inc.",
+  "license": "MIT"
+}
