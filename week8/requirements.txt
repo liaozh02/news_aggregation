@@ -1,4 +1,5 @@
 apscheduler
+logging
 lxml
 newspaper
 numpy
