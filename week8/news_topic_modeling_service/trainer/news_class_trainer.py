@@ -9,19 +9,21 @@ import tensorflow as tf
 from sklearn import metrics
 
 learn = tf.contrib.learn
-
+from tensorflow.contrib.learn.python.learn.estimators import estimator
 REMOVE_PREVIOUS_MODEL = True
 
 MODEL_OUTPUT_DIR = '../model/'
-DATA_SET_FILE = './tap-news-test.csv'
+DATA_SET_FILE = './tap-news.csv'
 VARS_FILE = '../model/vars'
 VOCAB_PROCESSOR_SAVE_FILE = '../model/vocab_procesor_save_file'
-MAX_DOCUMENT_LENGTH = 100
-N_CLASSES = 17
+MAX_DOCUMENT_LENGTH = 20
+N_CLASSES = 8
 
 # Training parms
-STEPS = 200
+STEPS = 210
+BATCH = 128
 
+tf.logging.set_verbosity(tf.logging.INFO)
 def main(unused_argv):
     if REMOVE_PREVIOUS_MODEL:
         # Remove old model
@@ -30,7 +32,7 @@ def main(unused_argv):
 
     # Prepare training and testing data
     df = pd.read_csv(DATA_SET_FILE, header=None)
-    train_df = df[0:500]
+    train_df = df[0:3000]
     test_df = df.drop(train_df.index)
 
     # x - news title, y - class
@@ -50,24 +52,30 @@ def main(unused_argv):
     # Saving n_words and vocab_processor:
     with open(VARS_FILE, 'w') as f:
         pickle.dump(n_words, f)
-
     vocab_processor.save(VOCAB_PROCESSOR_SAVE_FILE)
 
     # Build model
-    classifier = learn.Estimator(
+    classifier = estimator.SKCompat(estimator.Estimator(
         model_fn=news_cnn_model.generate_cnn_model(N_CLASSES, n_words),
-        model_dir=MODEL_OUTPUT_DIR)
+        model_dir=MODEL_OUTPUT_DIR,
+        config=learn.RunConfig(save_checkpoints_secs=10, save_summary_steps=10)))
+    # Set up logging for predictions
+    tensors_to_log = {"prob": "softmax_tensor"}
+    logging_hook = tf.train.LoggingTensorHook(
+        tensors=tensors_to_log, every_n_iter=100)
 
     # Train and predict
-    classifier.fit(x_train, y_train, steps=STEPS)
+    classifier.fit(x_train, y_train, batch_size=BATCH, steps=STEPS, monitors=[logging_hook])
 
-    # Evaluate model
-    y_predicted = [
-        p['class'] for p in classifier.predict(x_test, as_iterable=True)
-    ]
+    # Configure the accuracy metric
+    metrics = {
+        "accuracy":
+        learn.MetricSpec(
+            metric_fn=tf.metrics.accuracy, prediction_key="class")
+    }
 
-    score = metrics.accuracy_score(y_test, y_predicted)
-    print('Accuracy: {0:f}'.format(score))
+    # Evaluate the model
+    eval_results = classifier.score(x=x_test, y=y_test, metrics=metrics)
 
 if __name__ == '__main__':
     tf.app.run(main=main)

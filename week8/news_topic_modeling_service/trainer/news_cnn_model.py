@@ -1,14 +1,14 @@
 import tensorflow as tf
 
-EMBEDDING_SIZE = 40
+EMBEDDING_SIZE = 100
 N_FILTERS = 10
-WINDOW_SIZE = 20
+WINDOW_SIZE = 5
 FILTER_SHAPE1 = [WINDOW_SIZE, EMBEDDING_SIZE]
 FILTER_SHAPE2 = [WINDOW_SIZE, N_FILTERS]
 POOLING_WINDOW = 4
 POOLING_STRIDE = 2
 
-LEARNING_RATE = 0.05
+LEARNING_RATE = 0.008
 
 def generate_cnn_model(n_classes, n_words):
     """2 layer ConvNet to predict from sequence of words to a class."""
@@ -25,9 +25,7 @@ def generate_cnn_model(n_classes, n_words):
       with tf.variable_scope('CNN_layer1'):
         # Apply Convolution filtering on input sequence.
         conv1 = tf.contrib.layers.convolution2d(
-            word_vectors, N_FILTERS, FILTER_SHAPE1, padding='VALID')
-        # Add a RELU for non linearity.
-        conv1 = tf.nn.relu(conv1)
+            word_vectors, N_FILTERS, FILTER_SHAPE1, padding='VALID', activation_fn=tf.nn.relu)
         # Max pooling across output of Convolution+Relu.
         pool1 = tf.nn.max_pool(
             conv1,
@@ -45,7 +43,7 @@ def generate_cnn_model(n_classes, n_words):
 
       # Apply regular WX + B and classification.
       logits = tf.contrib.layers.fully_connected(pool2, n_classes, activation_fn=None)
-      loss = tf.contrib.losses.softmax_cross_entropy(logits, target)
+      loss = tf.losses.softmax_cross_entropy(target, logits)
 
       train_op = tf.contrib.layers.optimize_loss(
           loss,
@@ -55,7 +53,7 @@ def generate_cnn_model(n_classes, n_words):
 
       return ({
           'class': tf.argmax(logits, 1),
-          'prob': tf.nn.softmax(logits)
+          'prob': tf.nn.softmax(logits, name = "softmax_tensor")
       }, loss, train_op)
 
     return cnn_model
