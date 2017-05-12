@@ -4,16 +4,19 @@
   "description": "PM2 Monitor Redis",
   "main": "app.js",
   "dependencies": {
-    "pmx" : "latest"
+    "pmx": "latest",
+    "redis": "^2.7.1"
   },
-  "config" : {
-    "conf_var_1" : true
+  "config": {
+    "conf_var_1": true
   },
-  "apps" : [{
-    "merge_logs"         : true,
-    "max_memory_restart" : "200M",
-    "script"             : "app.js"
-  }],
+  "apps": [
+    {
+      "merge_logs": true,
+      "max_memory_restart": "200M",
+      "script": "app.js"
+    }
+  ],
   "author": "Keymetrics Inc.",
   "license": "MIT"
 }

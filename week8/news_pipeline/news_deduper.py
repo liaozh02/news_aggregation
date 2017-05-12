@@ -43,7 +43,7 @@ class NewsDeduper:
         recent_news_list = list(self.db[self.collection].find({'publishedAt':{'$gte':published_at_day_begin, '$lt': published_at_day_end}}))
         print "get recent news list"
         if recent_news_list is not None and len(recent_news_list) > 0:
-            documents = [str(news['text'].encode('utf-8')) for news in recent_news_list]
+            documents = [str(news['text'].encode('ascii', 'ignore')) for news in recent_news_list]
             documents.insert(0, text)
 
             #caculate similarity matrix

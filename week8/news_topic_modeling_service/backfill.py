@@ -16,7 +16,8 @@ if __name__ == '__main__':
         print count
         if 'class' not in news:
             print 'Populating classes...'
-            title = news['title']
+            title = news['title'].encode("ascii", 'ignore')
+            print title
             topic = news_topic_modeling_service_client.classify(title)
             news['class'] = topic
             db['news'].replace_one({'digest': news['digest']}, news, upsert=True)

@@ -40,7 +40,7 @@ class LoginPage extends React.Component {
                 response.json().then((json) => {
                     console.log(json);
                     Auth.authenticateUser(json.token, email, json.data);
-                    this.context.router.replace('/news');
+                    this.context.router.replace('/');
                 });
             }
             else {

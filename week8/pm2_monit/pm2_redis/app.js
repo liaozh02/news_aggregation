@@ -6,7 +6,7 @@ var pmx = require('pmx'),
 
 //Module entryPoint
 pmx.initModule({
-  pid: pmx.resolvePidPaths(['var/run/redis-6379.pid']),
+  pid: pmx.resolvePidPaths(['var/run/redis_6379.pid']),
   // Options related to the display style on Keymetrics
   widget : {
 

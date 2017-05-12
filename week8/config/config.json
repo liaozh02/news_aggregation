@@ -85,7 +85,7 @@
     },
 
     "classification": {
-        "classNums": "17",
+        "classNums": "8",
         "modelUpdateLagInSeconds": "10"
     },
 

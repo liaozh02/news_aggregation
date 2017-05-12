@@ -53,7 +53,7 @@ class SignupPage extends React.Component {
                 response.json().then((json) => {
                     Auth.authenticateUser(json.token, email, json.data);
                     this.context.router.replace('/');
-                }).bind(this);
+                });
             
             }
             else {

@@ -1,0 +1,11 @@
+[Unit]
+Description=Redis
+After=network.target
+
+[Service]
+ExecStart=/usr/local/bin/redis-server /etc/redis/6379.conf  --daemonize no
+ExecStop=/usr/local/bin/redis-cli -h 127.0.0.1 -p 6379 shutdown
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
