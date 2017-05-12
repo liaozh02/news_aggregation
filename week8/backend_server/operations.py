@@ -13,6 +13,7 @@ CONFIG_FILE = os.path.join(os.path.dirname(__file__), '..', 'config', 'config.js
 import mongodb_client
 from cloudAMQP_client import CloudAMQPClient
 import news_recommendation_service_client
+from statsd import StatsClient
 
 with open(CONFIG_FILE, 'r') as f:
     data = json.load(f)
@@ -28,9 +29,13 @@ with open(CONFIG_FILE, 'r') as f:
 
 redis_client = redis.StrictRedis(REDIS_SERVER_HOST, REDIS_SERVER_PORT)
 CloudAMQPClient = CloudAMQPClient(LOG_CLICKS_TASK_QUEUE_URL, LOG_CLICKS_TASK_QUEUE_NAME)
+statsd = StatsClient()
+news_timer = statsd.timer('news')
 
 def getNewssummaryForuser(userId, pageNum):
+    news_timer.start()
     print "get news for user: %s @ page %s" % (userId, pageNum)
+    statsd.incr("user.news")
     pageNum = int(pageNum)
     startIndex = (pageNum - 1) * NEWS_PER_PAGE_SIZE
     endIndex = pageNum * NEWS_PER_PAGE_SIZE
@@ -65,6 +70,8 @@ def getNewssummaryForuser(userId, pageNum):
             news['reason'] = 'Recommend'
         if news['publishedAt'].date() == datetime.today().date():
             news['time'] = 'Today'
+    
+    news_timer.stop()
     return json.loads(dumps(sliced_news))
 
 

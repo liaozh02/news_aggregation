@@ -1,4 +1,5 @@
 apscheduler
+collectd-rabbitmq
 logging
 lxml
 newspaper
@@ -12,5 +13,6 @@ redis
 requests
 scipy
 sklearn
+statsd
 tensorflow
 watchdog

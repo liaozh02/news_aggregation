@@ -2,6 +2,7 @@ import React, {PropTypes} from "react";
 import SignupForm from "./SignupForm";
 import Auth from "../Auth/Auth";
 
+const config = require('../../../../config/config.json');
 class SignupPage extends React.Component {
     constructor(props, context) {
         super(props, context);
@@ -31,7 +32,10 @@ class SignupPage extends React.Component {
             console.log("password not match with confirm_password");
             return;
         }
-        fetch("http://localhost:3000/auth/signup", {
+        const domain = config.webServer.domain;
+        const port = config.webServer.port;
+        const url = "http://" + domain + ":" + port + "/auth/signup";
+        fetch(url, {
             method: 'POST',
             cache: false,
             headers: {

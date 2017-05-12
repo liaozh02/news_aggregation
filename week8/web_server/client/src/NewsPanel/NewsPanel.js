@@ -3,6 +3,7 @@ import React from 'react'
 import NewsCard from '../NewsCard/NewsCard'
 import _ from 'lodash'
 import Auth from "../Auth/Auth"
+const config = require('../../../../config/config.json');
 
 class NewsPanel extends React.Component{
     constructor(){
@@ -35,7 +36,9 @@ class NewsPanel extends React.Component{
             return;
         }
 
-        let url = 'http://localhost:3000/news/userId/' + Auth.getEmail()
+        const domain = config.webServer.domain;
+        const port = config.webServer.port;
+        let url = "http://" + domain + ":" + port + "/news/userId/"  + Auth.getEmail()
             + '/pageNum/' + this.state.pageNum;
         let request = new Request(encodeURI(url), {
             method: 'GET',

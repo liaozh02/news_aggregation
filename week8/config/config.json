@@ -1,4 +1,9 @@
 {
+    "webServer": {
+        "domain": "zhihongfan.ddns.net",
+        "port": "80"
+    },
+
     "scheduler": {
         "newspipeline": {
             "minutes": "30"

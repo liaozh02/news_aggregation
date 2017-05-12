@@ -2,6 +2,7 @@ import './NewsCard.css';
 import React from 'react'
 import Auth from '../Auth/Auth'
 
+const config = require('../../../../config/config.json');
 class NewsCard extends React.Component{
     redirectToUrl(event, url) {
         event.preventDefault();
@@ -12,9 +13,11 @@ class NewsCard extends React.Component{
     sendClickLog() {
  //       let url = 'http://localhost:3000/news/userId/' + Auth.getEmail()
  //           + '/newsId/' + this.props.news.digest;
-        let url = 'http://localhost:3000/news/userId/' + Auth.getEmail()
-            + '/log?newsId=' + this.props.news.digest;
-        let request = new Request(encodeURI(url), {
+        const domain = config.webServer.domain;
+        const port = config.webServer.port;
+        let url = "http://" + domain + ":" + port + "/news/userId/" + Auth.getEmail()
+            + '/newsId/' + encodeURIComponent(this.props.news.digest);
+        let request = new Request(url, {
             method: 'POST',
             cache: false,
             headers: {

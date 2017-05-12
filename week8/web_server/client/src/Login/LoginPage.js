@@ -2,6 +2,7 @@ import React, {PropTypes} from "react";
 import LoginForm from "./LoginForm";
 import Auth from "../Auth/Auth.js";
 
+const config = require('../../../../config/config.json');
 class LoginPage extends React.Component {
     constructor(props, context) {
         super(props, context);
@@ -20,7 +21,10 @@ class LoginPage extends React.Component {
         event.preventDefault();
         const email = this.state.userInfo.email;
         const password = this.state.userInfo.password;
-        fetch("http://localhost:3000/auth/login", {
+        const domain = config.webServer.domain;
+        const port = config.webServer.port;
+        const url = "http://" + domain + ":" + port + "/auth/login";
+        fetch(url, {
             method: 'POST',
             cache: false,
             headers: {

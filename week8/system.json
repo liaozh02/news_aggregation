@@ -24,5 +24,11 @@
     "name"        : "scheduleServer",
     "script"      : "./apscheduler/scheduler_server.py"
   },
+  {
+    "name"        : "statsdServer",
+    "script"      : "../../Projects/statsd/stats.js",
+    "args"        : "../../Projects/statsd/stats.conf"
+  }
+
   ]
 }

@@ -1,19 +1,21 @@
-classes = [
-    "Colleges & Schools",
-    "Environmental",
-    "World",
-    "Entertainment",
-    "Media",
-    "Politics & Government",
-    "Regional News",
-    "Religion",
-    "Sports",
-    "Technology",
-    "Traffic",
-    "Weather",
-    "Economic & Corp",
-    "Advertisements",
-    "Crime",
-    "Other",
-    "Magazine"
-]
+classes = {
+  'World'                : "World",
+  'U.S.'                 : "US",
+  'Business & Economic'  : "B&E",
+  'Technology'           : "Tech",
+  'Entertainment'        : "Entertainment",
+  'Sports'               : "Sports",
+  'Science & Environment': "S&E",
+  'Health & Life'        : "H&L"
+}
+
+prefers = {
+  "World"                : "World",
+  "US"                   : "U.S.",
+  "B&E"                  : "Business & Economic",
+  "Tech"                 : "Technology",
+  "Entertainment"        : "Entertainment",
+  "Sports"               : "Sports",
+  "S&E"                  : "Science & Environment",
+  "H&L"                  : "Health & Life" 
+}

@@ -12,20 +12,21 @@ router.get('/userId/:userId/pageNum/:pageNum', function(req, res, next) {
     })
 });
 
-/*router.post('/userId/:userId/newsId/:newsId', function(req, res, next) {
+router.post('/userId/:userId/newsId/:newsId', function(req, res, next) {
     user_id = req.params.userId;
-    news_id = req.params.newsId;
+    news_id = decodeURIComponent(req.params.newsId);
     console.log("Logging news click: userId: " + user_id + " newsId: " + news_id);
     rpc_client.logNewsclickForuser(user_id, news_id);
-    res.status(200);
-}); */
+    res.status(200).end();
+}); 
 
-router.post('/userId/:userId/log', function(req, res, next) {
+/*router.post('/userId/:userId/log', function(req, res, next) {
+    console.log(req.query);
     user_id = req.params.userId;
     news_id = req.query.newsId;
     console.log("Logging news click: userId: " + user_id + " newsId: " + news_id);
     rpc_client.logNewsclickForuser(user_id, news_id);
     res.status(200).end();
 });
-
+*/
 module.exports = router;

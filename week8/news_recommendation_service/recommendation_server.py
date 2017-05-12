@@ -10,7 +10,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'common'))
 CONFIG_FILE = os.path.join(os.path.dirname(__file__), '..', 'config', 'config.json')
 
 import mongodb_client
-
+import news_classes
 
 with open(CONFIG_FILE, 'r') as f:
     data = json.load(f)
@@ -33,12 +33,13 @@ class RequestHandler(pyjsonrpc.HttpRequestHandler):
             return []
 
         sorted_tuple = sorted(model['preference'].items(), key=operator.itemgetter(1), reverse=True)
-        sorted_pref_list = [x[0] for x in sorted_tuple]
+        sorted_pref_list = [news_classes.prefers[x[0]] for x in sorted_tuple]
         sorted_value_list = [x[1] for x in sorted_tuple]
 
         if isclose(sorted_value_list[0], sorted_value_list[-1]):
             return []
         
+        print sorted_pref_list
         return sorted_pref_list
         
 

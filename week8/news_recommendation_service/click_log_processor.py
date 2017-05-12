@@ -44,21 +44,22 @@ def handle_message(msg):
         new_model = {'userId': userId}
         preference = {}
         for i in news_classes.classes:
-            preference[i] = float(INITIAL_P)
+            topic = news_classes.classes[i]      
+            preference[topic] = float(INITIAL_P)
         new_model['preference'] = preference
-
         model = new_model
 
     print 'Update preference model for user %s' % userId
-
     news = db[NEWS_DB_COLLECTION].find_one({'digest':newsId})
+
     if (news is None
         or 'class' not in news
         or news['class'] not in news_classes.classes):
         print 'skipping processing'
         return
 
-    click_class = news['class']
+    click_class = news_classes.classes[news['class']]
+    print "update preference for %s" % click_class
 
     old_p = model['preference'][click_class]
     new_p = float((1 - ALPHA) * old_p + ALPHA)
@@ -67,6 +68,7 @@ def handle_message(msg):
     for i,prob in model['preference'].iteritems():
         if not i == click_class:
             model['preference'][i] = float((1 - ALPHA) * model['preference'][i])
+    print model['preference']
 
     db[PREFER_DB_COLLECTION].replace_one({'userId': userId}, model, upsert=True)
 
