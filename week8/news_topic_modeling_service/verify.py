@@ -27,6 +27,8 @@ if __name__ == '__main__':
     urls = list(train_df[3])
     sources = list(train_df[5])
     count = 0
+    count_rules = 0
+    count_ml = 0
     for i in xrange(0, length-1):
         print titles[i]
         print urls[i]
@@ -34,17 +36,20 @@ if __name__ == '__main__':
         topic = classifier.classify(sources[i], urls[i])
         if topic is not None:
             print "Get by url %s" % topic
+            count_rules += 1
 
         else:
             topic = news_topic_modeling_service_client.classify(titles[i]) 
-            print "Get by ml %s" % topic   
+            print "Get by ml %s" % topic
+            count_ml += 1
             
         if str(classes[i]) == class_map[topic]:
             print "matched"
-            count = count + 1
+            count += 1
         else:
             print class_map[topic]
             print str(classes[i])
 
     print "right cnt %d" % count
-    print "right ration %f" % (count/length)
+    ratio = float(count)/float(length)
+    print "right ration %f" % ratio
