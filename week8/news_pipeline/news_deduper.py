@@ -15,6 +15,9 @@ import mongodb_client
 from cloudAMQP_client import CloudAMQPClient
 import news_topic_modeling_service_client
 
+from news_classify_by_rules import NewsClassifyByRules
+classifier = NewsClassifyByRules()
+
 class NewsDeduper:
     def __init__(self):
         with open(CONFIG_FILE, 'r') as f:
@@ -59,9 +62,18 @@ class NewsDeduper:
                     return False
         task['publishedAt'] = parser.parse(task['publishedAt'])
         title = task['title'].encode('ascii', 'ignore')
+        source = task['source'].encode('ascii')
+        url = task['url'].encode('ascii')
         print title
+        print source
+        print url
         if title is not None:
-            topic = news_topic_modeling_service_client.classify(title)
+            topic = classifier.classify(source, url)
+            if topic is not None:
+                print "Get topic %s by url" % topic
+            else:
+                topic = news_topic_modeling_service_client.classify(title)
+                print "Learn topic %s by ml" % topic
             task['class'] = topic
 
         self.db[self.collection].replace_one({'digest': task['digest']}, task, upsert=True)

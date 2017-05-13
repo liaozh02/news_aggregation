@@ -1,9 +1,9 @@
 import json
 import pika
 import traceback
-import logging
+#import logging
 
-logging.basicConfig(level = logging.INFO)
+#logging.basicConfig(level = logging.INFO)
 
 class CloudAMQPClient:
     def __init__(self, cloud_amqp_url, queue_name):
