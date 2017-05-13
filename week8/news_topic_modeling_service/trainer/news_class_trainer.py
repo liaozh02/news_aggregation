@@ -32,11 +32,12 @@ def main(unused_argv):
 
     # Prepare training and testing data
     df = pd.read_csv(DATA_SET_FILE, header=None)
-    train_df = df[0:3000]
+    train_df = df[0:3300]
     test_df = df.drop(train_df.index)
 
     # x - news title, y - class
     x_train = train_df[1]
+    x_train = x_train.str.replace('[^\x00-\x7F]','')
     y_train = np.array(train_df[0], dtype=int)
     x_test = test_df[1]
     y_test = np.array(test_df[0], dtype=int)
