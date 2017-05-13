@@ -1,0 +1,158 @@
+{
+    "bbc-sports": [
+        {
+            "pattern": "http.*bbc",
+            "class"  : "Sports"
+        }
+    ],
+
+    "espn": [
+        {
+            "pattern": "http",
+            "class"  : "Sports"
+        }
+    ],
+
+    "entertainment-weekly": [
+        {
+            "pattern": "http",
+            "class"  : "Entertainment"
+        }
+    ],
+
+    "ign": [
+        {
+            "pattern": "http",
+            "class"  : "Entertainment"
+        }
+    ],
+
+    "techcrunch": [
+        {
+            "pattern": "http.*techcrunch",
+            "class"  : "Technology"
+        }
+    ],
+
+     "bbc-news": [
+        {
+            "pattern": "(?<=bbc.co.uk).*(uk|election-2017|world-europe|world-middle-east|world-asia|world-africa|world-latin-america|world-australia)",
+            "class"  : "World"
+        },
+        {
+            "pattern": "(?<=bbc.co.uk).*world-us",
+            "class"  : "U.S."
+        },
+        {
+            "pattern": "(?<=bbc.co.uk).*/business",
+            "class"  : "Business & Economic"
+        },
+        {
+            "pattern": "(?<=bbc.co.uk).*/technology",
+            "class"  : "Technology"
+        },
+        {
+            "pattern": "(?<=bbc.co.uk).*/entertainment-arts",
+            "class"  : "Entertainment"
+        },
+        {
+            "pattern": "(?<=bbc.co.uk).*/sport/",
+            "class"  : "Sports"
+        },
+        {
+            "pattern": "(?<=bbc.co.uk).*/science-environment",
+            "class"  : "Science & Environment"
+        },
+        {
+            "pattern": "(?<=bbc.co.uk).*/health",
+            "class"  : "Health & Life"
+        }
+    ],
+
+     "cnn": [
+        {
+            "pattern": "(?<=cnn.com/).*(/asia/|/world/|/europe/|/americas/|/middleeast/|/africa/)",
+            "class"  : "World"
+        },
+        {
+            "pattern": "(?<=cnn.com/).*/us/",
+            "class"  : "U.S."
+        },
+        {
+            "pattern": "(?<=www.cnn.com/).*/cnnmoney/|(?<=money.cnn.com).*(/companies/|/economy/|/investing/)",
+            "class"  : "Business & Economic"
+        },
+        {
+            "pattern": "(?<=money.cnn.com).*/technology/",
+            "class"  : "Technology"
+        },
+        {
+            "pattern": "(?<=cnn.com).*/entertainment/",
+            "class"  : "Entertainment"
+        },
+        {
+            "pattern": "bleacherreport.com",
+            "class"  : "Sports"
+        },
+        {
+            "pattern": "(?<=cnn.com).*/health/",
+            "class"  : "Health & Life"
+        }
+    ],
+
+    "the-new-york-times": [
+        {
+            "pattern": "(?<=nytimes.com/).*/world/",
+            "class"  : "World"
+        },
+        {
+            "pattern": "(?<=nytimes.com/).*(/us/|/upshot/)",
+            "class"  : "U.S."
+        },
+        {
+            "pattern": "(?<=nytimes.com/).*(/business/)|(krugman.blogs.nytimes.com)",
+            "class"  : "Business & Economic"
+        },
+        {
+            "pattern": "(?<=nytimes.com/).*/technology/",
+            "class"  : "Technology"
+        },
+        {
+            "pattern": "(?<=nytimes.com/).*(/fashion/|/arts/)",
+            "class"  : "Entertainment"
+        },
+        {
+            "pattern": "(?<=nytimes.com/).*/sports/",
+            "class"  : "Sports"
+        }
+    ],
+
+    "the-washington-post": [
+        {
+            "pattern": "(?<=washingtonpost).*(/world/|/worldviews/)",
+            "class"  : "World"
+        },
+        {
+            "pattern": "(?<=washingtonpost).*(/local/|/national/|/post-nation/|/powerpost/|/courts_law/|/fact-checker/)",
+            "class"  : "U.S."
+        },
+        {
+            "pattern": "(?<=washingtonpost).*(/business/)",
+            "class"  : "Business & Economic"
+        },
+        {
+            "pattern": "(?<=washingtonpost).*/arts-and-entertainment/",
+            "class"  : "Entertainment"
+        },
+        {
+            "pattern": "(?<=washingtonpost).*/sports/",
+            "class"  : "Sports"
+        },
+        {
+            "pattern": "(?<=washingtonpost).*/to-your-health",
+            "class"  : "Health & Life"
+        }
+    ]
+
+    
+}
