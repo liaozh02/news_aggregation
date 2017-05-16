@@ -31,7 +31,7 @@
     "queue": {
         "logClicksTaskQueueUrl": "amqp://guest:guest@localhost:5672/%2F",
         "logClicksTaskQueueName": "tap-news-log-clicks-task-queue",
-        "logClicksTaskSleepTime": "5",
+        "logClicksTaskSleepTime": "2",
         "dedupeNewsTaskQueueUrl": "amqp://guest:guest@localhost:5672/%2F",
         "dedupeNewsTaskQueueName": "tap-news-dedupe-news-task-queue",
         "dedupeNewsTaskSleepTime": "2",
@@ -86,7 +86,8 @@
     },
 
     "clicksModel": {
-        "alpha": "0.1"
+        "alpha": "0.1",
+        "daydelta": "1"
     },
 
     "classification": {

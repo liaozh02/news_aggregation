@@ -65,6 +65,7 @@ def getNewssummaryForuser(userId, pageNum):
         total_news = list(db[NEWS_DB_COLLECTION].find().sort([('publishedAt', -1)]).limit(NEWS_LIMIT))            
         if isclose(sorted_value_list[0], sorted_value_list[-1]):
             print "News User. No Preference"
+            sorted_news = total_news;
         else:
             #sort News accorging to user preference
             #weight = WEIGHT_PAGE**(pageNum-1)
