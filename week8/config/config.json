@@ -77,8 +77,8 @@
     },
 
     "news": {
-        "newsLimit": "100",
-        "newsPageSize": "10"        
+        "newsLimit": "300",
+        "newsPageSize": "30"        
     },
 
     "newsDedupe": {

@@ -1,12 +1,12 @@
 .news-intro-col {
-  display: inline-flex;
   color: black;
   height: 100%;
 }
 
 .news-intro-panel {
-  margin: auto 5px;
   text-align: left;
+  max-height: 160px;
+  overflow: auto;
 }
 
 .news-description {
@@ -21,6 +21,10 @@
   font-size: 18px;
 }
 
+.news-chip-list {
+  display:flex;
+}
+
 .fill {
     display: flex;
     justify-content: center;
@@ -31,8 +35,9 @@
 .fill img {
     padding-left: 20px;
     padding-right: 20px;
+    margin-right: 20px;
     flex-shrink: 0;
     min-width: 100%;
-    max-height: 250px;
+    max-height: 200px;
     object-fit: cover;
 }

@@ -3,19 +3,43 @@ import React from 'react'
 import NewsCard from '../NewsCard/NewsCard'
 import _ from 'lodash'
 import Auth from "../Auth/Auth"
+import SideNav from "../SideNav/SideNav"
 const config = require('../../../../config/config.json');
 
 class NewsPanel extends React.Component{
     constructor(){
         super();
-        this.state = {news:null, pageNum:1, loadedAll:null};
+        this.state = {news:null, pageNum:1, loadedAll:null, topic:""};
         this.handleScroll = this.handleScroll.bind(this);
+        this.changeTopic =  this.changeTopic.bind(this);
     }
 
     componentDidMount() {
         this.loadMoreNews();
         this.loadMoreNews = _.debounce(this.loadMoreNews, 1000);
-        window.addEventListener('scroll', this.handleScroll);
+        window.addEventListener('scroll', this.handleScroll);      
+    }
+
+    componentDidUpdate(){
+        var cnt = 0;
+        if(this.state.news && this.state.topic !== ""){
+            this.state.news.forEach((news) => {
+                if(news.class === this.state.topic) {
+                    cnt++;
+                }
+            })
+            console.log(cnt + "news in totoal "+ this.state.news.length);
+            if(cnt < 3) {
+                console.log("current cnt"+ cnt);
+                this.loadMoreNews();
+            }
+        }
+            
+    }
+
+    changeTopic(newTopic) {
+        console.log("changeTopc to" + newTopic);
+        this.setState({topic: newTopic})
     }
 
     handleScroll() {
@@ -25,6 +49,7 @@ class NewsPanel extends React.Component{
         this.loadMoreNews();
         }
    }
+   
 
    componentWillUnmount() {
        window.removeEventListener('scroll', this.handleScroll);
@@ -35,7 +60,6 @@ class NewsPanel extends React.Component{
             console.log("Loaded All News");
             return;
         }
-
         const domain = config.webServer.domain;
         const port = config.webServer.port;
         let url = "http://" + domain + ":" + port + "/news/userId/"  + Auth.getEmail()
@@ -54,6 +78,7 @@ class NewsPanel extends React.Component{
                     this.setState({loadedAll: true});
 
                 }
+                console.log("now page: " + this.state.pageNum);
                 this.setState({
                     news: this.state.news? this.state.news.concat(news) : news,
                     pageNum: this.state.pageNum + 1
@@ -62,12 +87,23 @@ class NewsPanel extends React.Component{
     }
 
     renderNews() {
-        var news_list = this.state.news.map(function(news) {
-            return(
-                <a className="list-group-item" key={news.digest} href="#">
-                    <NewsCard news={news}/>
-                </a>
-            );
+        var news_list = this.state.news.map((news) =>{
+            if(this.state.topic !== "") {
+                if(news.class === this.state.topic){
+                    return(
+                        <a className="list-group-item" key={news.digest} href="#">
+                            <NewsCard news={news}/>
+                        </a>
+                    );
+                }
+            }
+            else {
+                return(
+                        <a className="list-group-item" key={news.digest} href="#">
+                            <NewsCard news={news}/>
+                        </a>
+                    );
+            }
         });
 
         return(
@@ -75,18 +111,24 @@ class NewsPanel extends React.Component{
                 <div className="list-group">
                     {news_list}
                 </div>
-                 {this.state.loadedAll && <p className="blue lighten-2">No more news to load</p> }
+                {this.state.loadedAll && <p className="blue lighten-2">No more news to load</p> }
             </div>
-        );        
+        );       
     }
 
     render() {
         if (this.state.news) {
             return(
                 <div>
-                    {this.renderNews()}
+                    <div className='col s1'>
+                        <SideNav changeTopic={this.changeTopic}/>
+                    </div>
+                    <div className='col s9 offset-s1'>
+                        {this.renderNews()}
+                    </div>
                 </div>
             );
+            
         } else {
             return(
                 <div>
