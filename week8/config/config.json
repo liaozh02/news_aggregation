@@ -87,7 +87,7 @@
 
     "clicksModel": {
         "alpha": "0.1",
-        "daydelta": "1"
+        "daydelta": "2"
     },
 
     "classification": {
